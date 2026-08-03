@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${post.title} + ' - Campus Book Market'">게시글 상세 - Campus Book Market</title>
+</head>
+<body>
+<header>
+    <a href="/">Campus Book Market</a>
+</header>
+
+<main>
+    <article>
+        <h1 th:text="${post.title}">게시글 제목</h1>
+
+        <dl>
+            <div>
+                <dt>가격</dt>
+                <dd th:text="${post.price} + '원'">0원</dd>
+            </div>
+            <div>
+                <dt>판매자</dt>
+                <dd th:text="${post.sellerName}">판매자</dd>
+            </div>
+        </dl>
+    </article>
+
+    <a href="/posts">목록으로 돌아가기</a>
+</main>
+</body>
+</html>

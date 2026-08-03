@@ -17,7 +17,7 @@
 
     <ul th:unless="${#lists.isEmpty(posts)}">
         <li th:each="post : ${posts}">
-            <strong th:text="${post.title}">게시글 제목</strong>
+            <a th:href="@{/posts/{postId}(postId=${post.id})}" th:text="${post.title}">게시글 제목</a>
             <span th:text="${post.price} + '원'">0원</span>
             <span th:text="${post.sellerName}">판매자</span>
         </li>

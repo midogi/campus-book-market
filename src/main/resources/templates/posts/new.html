@@ -17,16 +17,19 @@
         <div>
             <label for="title">제목</label>
             <input id="title" type="text" th:field="*{title}" required>
+            <p th:if="${#fields.hasErrors('title')}" th:errors="*{title}">제목 오류</p>
         </div>
 
         <div>
             <label for="price">가격</label>
             <input id="price" type="number" min="0" th:field="*{price}" required>
+            <p th:if="${#fields.hasErrors('price')}" th:errors="*{price}">가격 오류</p>
         </div>
 
         <div>
             <label for="sellerName">판매자</label>
             <input id="sellerName" type="text" th:field="*{sellerName}" required>
+            <p th:if="${#fields.hasErrors('sellerName')}" th:errors="*{sellerName}">판매자 오류</p>
         </div>
 
         <button type="submit">등록</button>

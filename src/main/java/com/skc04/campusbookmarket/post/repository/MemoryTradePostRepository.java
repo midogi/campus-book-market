@@ -34,4 +34,14 @@ public class MemoryTradePostRepository {
         storage.put(id, post);
         return post;
     }
+
+    public Optional<TradePost> update(Long id, String title, long price, String sellerName) {
+        if (!storage.containsKey(id)) {
+            return Optional.empty();
+        }
+
+        TradePost updatedPost = new TradePost(id, title, price, sellerName);
+        storage.put(id, updatedPost);
+        return Optional.of(updatedPost);
+    }
 }

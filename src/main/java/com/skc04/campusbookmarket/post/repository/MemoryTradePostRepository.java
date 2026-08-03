@@ -11,6 +11,7 @@ import org.springframework.stereotype.Repository;
 public class MemoryTradePostRepository {
 
     private final Map<Long, TradePost> storage = new LinkedHashMap<>();
+    private long nextId = 4L;
 
     public MemoryTradePostRepository() {
         storage.put(1L, new TradePost(1L, "객체지향의 사실과 오해", 12000, "컴퓨터공학과 3학년"));
@@ -24,5 +25,13 @@ public class MemoryTradePostRepository {
 
     public Optional<TradePost> findById(Long id) {
         return Optional.ofNullable(storage.get(id));
+    }
+
+    public TradePost save(String title, long price, String sellerName) {
+        Long id = nextId++;
+        TradePost post = new TradePost(id, title, price, sellerName);
+
+        storage.put(id, post);
+        return post;
     }
 }

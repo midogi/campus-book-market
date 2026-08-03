@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ko">
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,7 +12,16 @@
 
 <main>
     <h1>게시글 목록</h1>
-    <p>아직 등록된 게시글이 없습니다.</p>
+
+    <p th:if="${#lists.isEmpty(posts)}">아직 등록된 게시글이 없습니다.</p>
+
+    <ul th:unless="${#lists.isEmpty(posts)}">
+        <li th:each="post : ${posts}">
+            <strong th:text="${post.title}">게시글 제목</strong>
+            <span th:text="${post.price} + '원'">0원</span>
+            <span th:text="${post.sellerName}">판매자</span>
+        </li>
+    </ul>
 </main>
 </body>
 </html>

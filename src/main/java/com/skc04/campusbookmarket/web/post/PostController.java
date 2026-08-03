@@ -3,9 +3,11 @@ package com.skc04.campusbookmarket.web.post;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.repository.MemoryTradePostRepository;
 import com.skc04.campusbookmarket.web.post.form.PostCreateForm;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -36,7 +38,14 @@ public class PostController {
     }
 
     @PostMapping
-    public String create(@ModelAttribute("postCreateForm") PostCreateForm form) {
+    public String create(
+            @Valid @ModelAttribute("postCreateForm") PostCreateForm form,
+            BindingResult bindingResult
+    ) {
+        if (bindingResult.hasErrors()) {
+            return "posts/new";
+        }
+
         TradePost savedPost = tradePostRepository.save(
                 form.getTitle(),
                 form.getPrice(),

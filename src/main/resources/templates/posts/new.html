@@ -32,6 +32,13 @@
             <p th:if="${#fields.hasErrors('sellerName')}" th:errors="*{sellerName}">판매자 오류</p>
         </div>
 
+        <div>
+            <label for="description">상품 설명</label>
+            <textarea id="description" rows="8" maxlength="1000"
+                      th:field="*{description}" required></textarea>
+            <p th:if="${#fields.hasErrors('description')}" th:errors="*{description}">상품 설명 오류</p>
+        </div>
+
         <button type="submit">등록</button>
     </form>
 

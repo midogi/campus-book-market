@@ -1,7 +1,7 @@
 package com.skc04.campusbookmarket.web.post;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
-import com.skc04.campusbookmarket.post.repository.MemoryTradePostRepository;
+import com.skc04.campusbookmarket.post.service.TradePostService;
 import com.skc04.campusbookmarket.web.post.form.PostCreateForm;
 import com.skc04.campusbookmarket.web.post.form.PostUpdateForm;
 import jakarta.validation.Valid;
@@ -20,15 +20,15 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/posts")
 public class PostController {
 
-    private final MemoryTradePostRepository tradePostRepository;
+    private final TradePostService tradePostService;
 
-    public PostController(MemoryTradePostRepository tradePostRepository) {
-        this.tradePostRepository = tradePostRepository;
+    public PostController(TradePostService tradePostService) {
+        this.tradePostService = tradePostService;
     }
 
     @GetMapping
     public String list(Model model) {
-        model.addAttribute("posts", tradePostRepository.findAll());
+        model.addAttribute("posts", tradePostService.findAll());
         return "posts/list";
     }
 
@@ -47,10 +47,11 @@ public class PostController {
             return "posts/new";
         }
 
-        TradePost savedPost = tradePostRepository.save(
+        TradePost savedPost = tradePostService.create(
                 form.getTitle(),
                 form.getPrice(),
-                form.getSellerName()
+                form.getSellerName(),
+                form.getDescription()
         );
 
         return "redirect:/posts/" + savedPost.getId();
@@ -64,6 +65,7 @@ public class PostController {
         form.setTitle(post.getTitle());
         form.setPrice(post.getPrice());
         form.setSellerName(post.getSellerName());
+        form.setDescription(post.getDescription());
 
         model.addAttribute("postId", postId);
         model.addAttribute("postUpdateForm", form);
@@ -84,15 +86,27 @@ public class PostController {
             return "posts/edit";
         }
 
-        TradePost updatedPost = tradePostRepository.update(
+        TradePost updatedPost = tradePostService.update(
                         postId,
                         form.getTitle(),
                         form.getPrice(),
-                        form.getSellerName()
+                        form.getSellerName(),
+                        form.getDescription()
                 )
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
         return "redirect:/posts/" + updatedPost.getId();
+    }
+
+    @PostMapping("/{postId}/delete")
+    public String delete(@PathVariable Long postId) {
+        boolean deleted = tradePostService.delete(postId);
+
+        if (!deleted) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+        }
+
+        return "redirect:/posts";
     }
 
     @GetMapping("/{postId}")
@@ -104,7 +118,7 @@ public class PostController {
     }
 
     private TradePost findPostById(Long postId) {
-        return tradePostRepository.findById(postId)
+        return tradePostService.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 }

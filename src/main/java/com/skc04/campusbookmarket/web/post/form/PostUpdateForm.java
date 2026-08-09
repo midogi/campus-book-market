@@ -19,6 +19,10 @@ public class PostUpdateForm {
     @Size(max = 30, message = "판매자는 30자 이하여야 합니다.")
     private String sellerName;
 
+    @NotBlank(message = "상품 설명은 필수입니다.")
+    @Size(max = 1000, message = "상품 설명은 1000자 이하여야 합니다.")
+    private String description;
+
     public String getTitle() {
         return title;
     }
@@ -41,5 +45,13 @@ public class PostUpdateForm {
 
     public void setSellerName(String sellerName) {
         this.sellerName = sellerName;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
     }
 }

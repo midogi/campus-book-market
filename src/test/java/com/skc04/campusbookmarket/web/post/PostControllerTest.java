@@ -1,0 +1,181 @@
+package com.skc04.campusbookmarket.web.post;
+
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
+
+import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.service.TradePostService;
+import java.util.List;
+import java.util.Optional;
+import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.web.servlet.MockMvc;
+
+@WebMvcTest(PostController.class)
+class PostControllerTest {
+
+    @Autowired
+    private MockMvc mockMvc;
+
+    @MockitoBean
+    private TradePostService tradePostService;
+
+    @Test
+    void list() throws Exception {
+        List<TradePost> posts = List.of(samplePost());
+        given(tradePostService.findAll()).willReturn(posts);
+
+        mockMvc.perform(get("/posts"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", posts));
+    }
+
+    @Test
+    void detail() throws Exception {
+        TradePost post = samplePost();
+        given(tradePostService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/detail"))
+                .andExpect(model().attribute("post", post));
+    }
+
+    @Test
+    void detailReturnsNotFoundWhenPostDoesNotExist() throws Exception {
+        given(tradePostService.findById(999L)).willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999"))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createForm() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/new"))
+                .andExpect(model().attributeExists("postCreateForm"));
+    }
+
+    @Test
+    void create() throws Exception {
+        TradePost savedPost = samplePost();
+        given(tradePostService.create(
+                "Spring Basics", 15000L, "Student Seller", "Clean copy"
+        )).willReturn(savedPost);
+
+        mockMvc.perform(post("/posts")
+                        .param("title", "Spring Basics")
+                        .param("price", "15000")
+                        .param("sellerName", "Student Seller")
+                        .param("description", "Clean copy"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts/1"));
+    }
+
+    @Test
+    void createRejectsInvalidInput() throws Exception {
+        mockMvc.perform(post("/posts")
+                        .param("title", " ")
+                        .param("price", "-1")
+                        .param("sellerName", " ")
+                        .param("description", " "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/new"))
+                .andExpect(model().attributeHasFieldErrors(
+                        "postCreateForm", "title", "price", "sellerName", "description"
+                ));
+
+        verify(tradePostService, never()).create(
+                anyString(), anyLong(), anyString(), anyString()
+        );
+    }
+
+    @Test
+    void updateForm() throws Exception {
+        TradePost post = samplePost();
+        given(tradePostService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1/edit"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/edit"))
+                .andExpect(model().attribute("postId", 1L))
+                .andExpect(model().attributeExists("postUpdateForm"));
+    }
+
+    @Test
+    void update() throws Exception {
+        TradePost existingPost = samplePost();
+        TradePost updatedPost = new TradePost(
+                1L, "Updated Title", 20000L, "Updated Seller", "Updated description"
+        );
+        given(tradePostService.findById(1L)).willReturn(Optional.of(existingPost));
+        given(tradePostService.update(
+                1L, "Updated Title", 20000L, "Updated Seller", "Updated description"
+        )).willReturn(Optional.of(updatedPost));
+
+        mockMvc.perform(post("/posts/1/edit")
+                        .param("title", "Updated Title")
+                        .param("price", "20000")
+                        .param("sellerName", "Updated Seller")
+                        .param("description", "Updated description"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts/1"));
+    }
+
+    @Test
+    void updateRejectsInvalidInput() throws Exception {
+        given(tradePostService.findById(1L)).willReturn(Optional.of(samplePost()));
+
+        mockMvc.perform(post("/posts/1/edit")
+                        .param("title", " ")
+                        .param("price", "-1")
+                        .param("sellerName", " ")
+                        .param("description", " "))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/edit"))
+                .andExpect(model().attribute("postId", 1L))
+                .andExpect(model().attributeHasFieldErrors(
+                        "postUpdateForm", "title", "price", "sellerName", "description"
+                ));
+
+        verify(tradePostService, never()).update(
+                anyLong(), anyString(), anyLong(), anyString(), anyString()
+        );
+    }
+
+    @Test
+    void delete() throws Exception {
+        given(tradePostService.delete(1L)).willReturn(true);
+
+        mockMvc.perform(post("/posts/1/delete"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts"));
+    }
+
+    @Test
+    void deleteReturnsNotFoundWhenPostDoesNotExist() throws Exception {
+        given(tradePostService.delete(999L)).willReturn(false);
+
+        mockMvc.perform(post("/posts/999/delete"))
+                .andExpect(status().isNotFound());
+    }
+
+    private TradePost samplePost() {
+        return new TradePost(
+                1L, "Spring Basics", 15000L, "Student Seller", "Clean copy"
+        );
+    }
+}

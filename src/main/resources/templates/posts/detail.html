@@ -23,12 +23,42 @@
                 <dt>판매자</dt>
                 <dd th:text="${post.sellerName}">판매자</dd>
             </div>
+            <div>
+                <dt>거래 상태</dt>
+                <dd th:text="${post.status.displayName}">판매 중</dd>
+            </div>
+            <div>
+                <dt>등록 시각</dt>
+                <dd th:text="${post.createdAt}">2026-08-11T10:00</dd>
+            </div>
+            <div>
+                <dt>수정 시각</dt>
+                <dd th:text="${post.updatedAt}">2026-08-11T10:00</dd>
+            </div>
         </dl>
 
         <section>
             <h2>상품 설명</h2>
             <p th:text="${post.description}">상품 설명</p>
         </section>
+
+        <section>
+            <h2>거래 상태 변경</h2>
+
+            <form th:action="@{/posts/{postId}/status(postId=${post.id})}"
+                  method="post">
+                <button type="submit" name="status" value="SALE">
+                    판매 중
+                </button>
+                <button type="submit" name="status" value="RESERVED">
+                    예약 중
+                </button>
+                <button type="submit" name="status" value="SOLD">
+                    판매 완료
+                </button>
+            </form>
+        </section>
+
     </article>
 
     <a th:href="@{/posts/{postId}/edit(postId=${post.id})}">수정</a>

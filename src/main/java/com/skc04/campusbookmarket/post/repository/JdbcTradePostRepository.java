@@ -1,6 +1,7 @@
 package com.skc04.campusbookmarket.post.repository;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import java.sql.PreparedStatement;
 import java.util.List;
 import java.util.Optional;
@@ -19,7 +20,10 @@ public class JdbcTradePostRepository implements TradePostRepository {
                     resultSet.getString("title"),
                     resultSet.getLong("price"),
                     resultSet.getString("seller_name"),
-                    resultSet.getString("description")
+                    resultSet.getString("description"),
+                    TradeStatus.valueOf(resultSet.getString("status")),
+                    resultSet.getTimestamp("created_at").toLocalDateTime(),
+                    resultSet.getTimestamp("updated_at").toLocalDateTime()
             );
 
     private final JdbcTemplate jdbcTemplate;
@@ -31,7 +35,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
     @Override
     public List<TradePost> findAll() {
         String sql = """
-                SELECT id, title, price, seller_name, description
+                SELECT id, title, price, seller_name, description, status, created_at, updated_at
                 FROM trade_post
                 ORDER BY id
                 """;
@@ -42,7 +46,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
     @Override
     public Optional<TradePost> findById(Long id) {
         String sql = """
-                SELECT id, title, price, seller_name, description
+                SELECT id, title, price, seller_name, description, status, created_at, updated_at
                 FROM trade_post
                 WHERE id = ?
                 """;
@@ -74,7 +78,8 @@ public class JdbcTradePostRepository implements TradePostRepository {
             throw new IllegalStateException("게시글 ID를 생성하지 못했습니다.");
         }
 
-        return new TradePost(generatedId.longValue(), title, price, sellerName, description);
+        return findById(generatedId.longValue())
+                .orElseThrow(() -> new IllegalStateException("저장한 게시글을 조회하지 못했습니다."));
     }
 
     @Override
@@ -87,7 +92,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
     ) {
         String sql = """
                 UPDATE trade_post
-                SET title = ?, price = ?, seller_name = ?, description = ?
+                SET title = ?, price = ?, seller_name = ?, description = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """;
 
@@ -104,7 +109,23 @@ public class JdbcTradePostRepository implements TradePostRepository {
             return Optional.empty();
         }
 
-        return Optional.of(new TradePost(id, title, price, sellerName, description));
+        return findById(id);
+    }
+
+    @Override
+    public Optional<TradePost> updateStatus(Long id, TradeStatus status) {
+        String sql = """
+                UPDATE trade_post
+                SET status = ?, updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """;
+
+        int updatedRows = jdbcTemplate.update(sql, status.name(), id);
+        if (updatedRows == 0) {
+            return Optional.empty();
+        }
+
+        return findById(id);
     }
 
     @Override

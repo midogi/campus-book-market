@@ -1,6 +1,7 @@
 package com.skc04.campusbookmarket.web.post;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.service.TradePostService;
 import com.skc04.campusbookmarket.web.post.form.PostCreateForm;
 import com.skc04.campusbookmarket.web.post.form.PostUpdateForm;
@@ -14,6 +15,7 @@ import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
 @Controller
@@ -95,6 +97,13 @@ public class PostController {
                 )
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
+        return "redirect:/posts/" + updatedPost.getId();
+    }
+
+    @PostMapping("/{postId}/status")
+    public String updateStatus(@PathVariable Long postId, @RequestParam TradeStatus status) {
+        TradePost updatedPost = tradePostService.updateStatus(postId, status)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return "redirect:/posts/" + updatedPost.getId();
     }
 

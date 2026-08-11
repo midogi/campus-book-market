@@ -2,9 +2,11 @@ package com.skc04.campusbookmarket.post.repository;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
@@ -32,11 +34,15 @@ class JdbcTradePostRepositoryTest {
         assertEquals(15000, foundPost.getPrice());
         assertEquals("컴퓨터공학과 3학년", foundPost.getSellerName());
         assertEquals("필기 없이 깨끗합니다.", foundPost.getDescription());
+        assertEquals(TradeStatus.SALE, foundPost.getStatus());
+        assertNotNull(foundPost.getCreatedAt());
+        assertNotNull(foundPost.getUpdatedAt());
     }
 
     @Test
     void updateExistingPost() {
         TradePost savedPost = repository.save("기존 제목", 10000, "판매자", "기존 설명");
+        repository.updateStatus(savedPost.getId(), TradeStatus.RESERVED).orElseThrow();
 
         TradePost updatedPost = repository.update(
                         savedPost.getId(),
@@ -49,6 +55,21 @@ class JdbcTradePostRepositoryTest {
 
         assertEquals(savedPost.getId(), updatedPost.getId());
         assertEquals("수정 제목", repository.findById(savedPost.getId()).orElseThrow().getTitle());
+        assertEquals(TradeStatus.RESERVED, updatedPost.getStatus());
+        assertEquals(savedPost.getCreatedAt(), updatedPost.getCreatedAt());
+        assertNotNull(updatedPost.getUpdatedAt());
+    }
+
+    @Test
+    void updateStatusChangesStatusAndPreservesCreatedAt() {
+        TradePost savedPost = repository.save("상태 변경 글", 10000, "판매자", "설명");
+
+        TradePost updatedPost = repository.updateStatus(savedPost.getId(), TradeStatus.SOLD)
+                .orElseThrow();
+
+        assertEquals(TradeStatus.SOLD, updatedPost.getStatus());
+        assertEquals(savedPost.getCreatedAt(), updatedPost.getCreatedAt());
+        assertNotNull(updatedPost.getUpdatedAt());
     }
 
     @Test
@@ -64,6 +85,7 @@ class JdbcTradePostRepositoryTest {
     @Test
     void updateAndDeleteReturnFailureWhenPostDoesNotExist() {
         assertTrue(repository.update(999999L, "없는 글", 1000, "판매자", "설명").isEmpty());
+        assertTrue(repository.updateStatus(999999L, TradeStatus.SOLD).isEmpty());
         assertFalse(repository.deleteById(999999L));
     }
 }

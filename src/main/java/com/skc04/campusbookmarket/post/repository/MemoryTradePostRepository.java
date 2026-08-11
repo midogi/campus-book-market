@@ -1,10 +1,13 @@
 package com.skc04.campusbookmarket.post.repository;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradeStatus;
+import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+
 
 public class MemoryTradePostRepository implements TradePostRepository {
 
@@ -47,11 +50,43 @@ public class MemoryTradePostRepository implements TradePostRepository {
             String sellerName,
             String description
     ) {
-        if (!storage.containsKey(id)) {
+        TradePost post = storage.get(id);
+        if (post == null) {
             return Optional.empty();
         }
 
-        TradePost updatedPost = new TradePost(id, title, price, sellerName, description);
+        TradePost updatedPost = new TradePost(
+                id,
+                title,
+                price,
+                sellerName,
+                description,
+                post.getStatus(),
+                post.getCreatedAt(),
+                LocalDateTime.now()
+        );
+        storage.put(id, updatedPost);
+        return Optional.of(updatedPost);
+    }
+
+    @Override
+    public Optional<TradePost> updateStatus(Long id, TradeStatus status) {
+        TradePost post = storage.get(id);
+        if (post == null) {
+            return Optional.empty();
+        }
+
+        TradePost updatedPost = new TradePost(
+                post.getId(),
+                post.getTitle(),
+                post.getPrice(),
+                post.getSellerName(),
+                post.getDescription(),
+                status,
+                post.getCreatedAt(),
+                LocalDateTime.now()
+        );
+
         storage.put(id, updatedPost);
         return Optional.of(updatedPost);
     }

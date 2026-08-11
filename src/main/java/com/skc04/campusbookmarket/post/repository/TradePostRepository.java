@@ -1,6 +1,7 @@
 package com.skc04.campusbookmarket.post.repository;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +20,8 @@ public interface TradePostRepository {
             String sellerName,
             String description
     );
+
+    Optional<TradePost> updateStatus(Long id, TradeStatus status);
 
     boolean deleteById(Long id);
 }

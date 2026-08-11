@@ -1,10 +1,12 @@
 package com.skc04.campusbookmarket.post.service;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.repository.TradePostRepository;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
+
 
 @Service
 public class TradePostService {
@@ -35,6 +37,10 @@ public class TradePostService {
             String description
     ) {
         return tradePostRepository.update(postId, title, price, sellerName, description);
+    }
+
+    public Optional<TradePost> updateStatus(Long postId, TradeStatus status) {
+        return tradePostRepository.updateStatus(postId, status);
     }
 
     public boolean delete(Long postId) {

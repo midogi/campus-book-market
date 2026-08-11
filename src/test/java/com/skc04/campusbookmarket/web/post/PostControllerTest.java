@@ -13,6 +13,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.service.TradePostService;
 import java.util.List;
 import java.util.Optional;
@@ -177,5 +178,39 @@ class PostControllerTest {
         return new TradePost(
                 1L, "Spring Basics", 15000L, "Student Seller", "Clean copy"
         );
+    }
+
+    @Test
+    void updateStatus() throws Exception {
+        TradePost post = new TradePost(
+                1L,
+                "Spring Basics",
+                15000L,
+                "Student Seller",
+                "Clean copy",
+                TradeStatus.RESERVED
+        );
+
+        given(tradePostService.updateStatus(1L, TradeStatus.RESERVED))
+                .willReturn(Optional.of(post));
+
+        mockMvc.perform(post("/posts/1/status")
+                        .param("status", "RESERVED"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(tradePostService)
+                .updateStatus(1L, TradeStatus.RESERVED);
+
+    }
+
+    @Test
+    void updateStatusReturnsNotFoundWhenPostDoesNotExist() throws Exception {
+        given(tradePostService.updateStatus(999L, TradeStatus.SOLD))
+                .willReturn(Optional.empty());
+
+        mockMvc.perform(post("/posts/999/status")
+                        .param("status", "SOLD"))
+                .andExpect(status().isNotFound());
     }
 }

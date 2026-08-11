@@ -38,3 +38,4 @@ out/
 
 ### Local H2 database ###
 /data/
+/data-backup/

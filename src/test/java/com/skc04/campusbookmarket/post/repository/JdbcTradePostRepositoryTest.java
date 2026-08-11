@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -94,6 +95,47 @@ class JdbcTradePostRepositoryTest {
         assertEquals(springSoldPost.getId(), statusResults.get(0).getId());
         assertEquals(1, combinedResults.size());
         assertEquals(springSoldPost.getId(), combinedResults.get(0).getId());
+    }
+
+    @Test
+    void searchSortsByPriceAndReturnsRequestedPage() {
+        repository.save("비싼 책", 30000, "판매자1", "설명1");
+        repository.save("저렴한 책", 10000, "판매자2", "설명2");
+        repository.save("중간 가격 책", 20000, "판매자3", "설명3");
+
+        List<TradePost> firstPage = repository.search(
+                "",
+                null,
+                TradePostSort.PRICE_ASC,
+                2,
+                0
+        );
+        List<TradePost> secondPage = repository.search(
+                "",
+                null,
+                TradePostSort.PRICE_ASC,
+                2,
+                2
+        );
+
+        assertEquals(List.of(10000L, 20000L), firstPage.stream()
+                .map(TradePost::getPrice)
+                .toList());
+        assertEquals(List.of(30000L), secondPage.stream()
+                .map(TradePost::getPrice)
+                .toList());
+    }
+
+    @Test
+    void countAppliesKeywordAndStatusFilters() {
+        repository.save("Spring MVC", 15000, "판매자1", "설명1");
+        TradePost soldPost = repository.save("Spring DB", 12000, "판매자2", "설명2");
+        repository.save("Java 기초", 10000, "판매자3", "설명3");
+        repository.updateStatus(soldPost.getId(), TradeStatus.SOLD).orElseThrow();
+
+        assertEquals(3L, repository.count("", null));
+        assertEquals(2L, repository.count("spring", null));
+        assertEquals(1L, repository.count("spring", TradeStatus.SOLD));
     }
 
     @Test

@@ -1,6 +1,7 @@
 package com.skc04.campusbookmarket.post.repository;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import java.util.List;
 import java.util.Optional;
@@ -10,6 +11,18 @@ public interface TradePostRepository {
     List<TradePost> findAll();
 
     List<TradePost> search(String keyword, TradeStatus status);
+
+    List<TradePost> search(String keyword, TradeStatus status, TradePostSort sort);
+
+    List<TradePost> search(
+            String keyword,
+            TradeStatus status,
+            TradePostSort sort,
+            int limit,
+            int offset
+    );
+
+    long count(String keyword, TradeStatus status);
 
     Optional<TradePost> findById(Long id);
 

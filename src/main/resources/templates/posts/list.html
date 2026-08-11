@@ -34,8 +34,22 @@
             </select>
         </div>
 
+        <div>
+            <label for="sort">정렬</label>
+            <select id="sort" name="sort">
+                <option th:each="sortOption : ${sortOptions}"
+                        th:value="${sortOption.name()}"
+                        th:text="${sortOption.displayName}"
+                        th:selected="${sortOption == selectedSort}">
+                    최신순
+                </option>
+            </select>
+        </div>
+
         <button type="submit">검색</button>
-        <a th:if="${!#strings.isEmpty(keyword) or selectedStatus != null}"
+        <a th:if="${!#strings.isEmpty(keyword)
+                    or selectedStatus != null
+                    or selectedSort.name() != 'LATEST'}"
            th:href="@{/posts}">초기화</a>
     </form>
 
@@ -54,6 +68,26 @@
             <span th:text="${post.status.displayName}">판매 중</span>
         </li>
     </ul>
+
+    <nav th:if="${postPage.totalPages > 0}" aria-label="게시글 페이지">
+        <a th:unless="${postPage.first}"
+           th:href="@{/posts(keyword=${keyword}, status=${selectedStatus}, sort=${selectedSort}, page=${postPage.previousPage})}">
+            이전
+        </a>
+
+        <span th:each="pageNumber : ${postPage.pageNumbers}">
+            <strong th:if="${pageNumber == postPage.currentPage}"
+                    th:text="${pageNumber}">1</strong>
+            <a th:unless="${pageNumber == postPage.currentPage}"
+               th:href="@{/posts(keyword=${keyword}, status=${selectedStatus}, sort=${selectedSort}, page=${pageNumber})}"
+               th:text="${pageNumber}">1</a>
+        </span>
+
+        <a th:unless="${postPage.last}"
+           th:href="@{/posts(keyword=${keyword}, status=${selectedStatus}, sort=${selectedSort}, page=${postPage.nextPage})}">
+            다음
+        </a>
+    </nav>
 </main>
 </body>
 </html>

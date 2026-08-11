@@ -5,15 +5,19 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
+import static org.hamcrest.Matchers.containsString;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.redirectedUrl;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
+import com.skc04.campusbookmarket.post.service.TradePostPage;
 import com.skc04.campusbookmarket.post.service.TradePostService;
 import java.util.List;
 import java.util.Optional;
@@ -35,34 +39,55 @@ class PostControllerTest {
     @Test
     void list() throws Exception {
         List<TradePost> posts = List.of(samplePost());
-        given(tradePostService.search("", null)).willReturn(posts);
+        TradePostPage postPage = new TradePostPage(posts, 1, 10, 1);
+        given(tradePostService.search("", null, TradePostSort.LATEST, 1))
+                .willReturn(postPage);
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("postPage", postPage))
                 .andExpect(model().attribute("keyword", ""))
-                .andExpect(model().attributeExists("tradeStatuses"));
+                .andExpect(model().attribute("selectedSort", TradePostSort.LATEST))
+                .andExpect(model().attributeExists("tradeStatuses", "sortOptions"))
+                .andExpect(content().string(containsString("name=\"sort\"")));
 
-        verify(tradePostService).search("", null);
+        verify(tradePostService).search("", null, TradePostSort.LATEST, 1);
     }
 
     @Test
-    void listSearchesByKeywordAndStatus() throws Exception {
+    void listSearchesByKeywordStatusAndSortOnRequestedPage() throws Exception {
         List<TradePost> posts = List.of(samplePost());
-        given(tradePostService.search("Spring", TradeStatus.SOLD)).willReturn(posts);
+        TradePostPage postPage = new TradePostPage(posts, 2, 10, 11);
+        given(tradePostService.search(
+                "Spring",
+                TradeStatus.SOLD,
+                TradePostSort.PRICE_DESC,
+                2
+        )).willReturn(postPage);
 
         mockMvc.perform(get("/posts")
                         .param("keyword", "Spring")
-                        .param("status", "SOLD"))
+                        .param("status", "SOLD")
+                        .param("sort", "PRICE_DESC")
+                        .param("page", "2"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("postPage", postPage))
                 .andExpect(model().attribute("keyword", "Spring"))
                 .andExpect(model().attribute("selectedStatus", TradeStatus.SOLD))
-                .andExpect(model().attributeExists("tradeStatuses"));
+                .andExpect(model().attribute("selectedSort", TradePostSort.PRICE_DESC))
+                .andExpect(model().attributeExists("tradeStatuses", "sortOptions"))
+                .andExpect(content().string(containsString("page=1")));
 
-        verify(tradePostService).search("Spring", TradeStatus.SOLD);
+        verify(tradePostService).search(
+                "Spring",
+                TradeStatus.SOLD,
+                TradePostSort.PRICE_DESC,
+                2
+        );
     }
 
     @Test

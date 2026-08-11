@@ -35,25 +35,34 @@ class PostControllerTest {
     @Test
     void list() throws Exception {
         List<TradePost> posts = List.of(samplePost());
-        given(tradePostService.search("")).willReturn(posts);
+        given(tradePostService.search("", null)).willReturn(posts);
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", posts))
-                .andExpect(model().attribute("keyword", ""));
+                .andExpect(model().attribute("keyword", ""))
+                .andExpect(model().attributeExists("tradeStatuses"));
+
+        verify(tradePostService).search("", null);
     }
 
     @Test
-    void listSearchesByKeyword() throws Exception {
+    void listSearchesByKeywordAndStatus() throws Exception {
         List<TradePost> posts = List.of(samplePost());
-        given(tradePostService.search("Spring")).willReturn(posts);
+        given(tradePostService.search("Spring", TradeStatus.SOLD)).willReturn(posts);
 
-        mockMvc.perform(get("/posts").param("keyword", "Spring"))
+        mockMvc.perform(get("/posts")
+                        .param("keyword", "Spring")
+                        .param("status", "SOLD"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
                 .andExpect(model().attribute("posts", posts))
-                .andExpect(model().attribute("keyword", "Spring"));
+                .andExpect(model().attribute("keyword", "Spring"))
+                .andExpect(model().attribute("selectedStatus", TradeStatus.SOLD))
+                .andExpect(model().attributeExists("tradeStatuses"));
+
+        verify(tradePostService).search("Spring", TradeStatus.SOLD);
     }
 
     @Test

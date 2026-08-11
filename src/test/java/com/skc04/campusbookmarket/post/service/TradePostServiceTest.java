@@ -1,12 +1,11 @@
 package com.skc04.campusbookmarket.post.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.repository.TradePostRepository;
 import java.util.List;
 import org.junit.jupiter.api.Test;
@@ -25,30 +24,39 @@ class TradePostServiceTest {
     private TradePostService tradePostService;
 
     @Test
-    void searchReturnsAllPostsWhenKeywordIsBlank() {
+    void searchTrimsKeywordAndPassesStatus() {
         List<TradePost> posts = List.of(samplePost());
-        given(tradePostRepository.findAll()).willReturn(posts);
+        given(tradePostRepository.search("Spring", TradeStatus.SALE))
+                .willReturn(posts);
 
-        List<TradePost> result = tradePostService.search("   ");
+        List<TradePost> result = tradePostService.search(
+                "  Spring  ",
+                TradeStatus.SALE
+        );
 
         assertEquals(posts, result);
-        verify(tradePostRepository, never()).searchByTitle(anyString());
+        verify(tradePostRepository).search("Spring", TradeStatus.SALE);
     }
 
     @Test
-    void searchTrimsKeywordBeforeRepositoryCall() {
+    void searchConvertsNullKeywordToEmptyString() {
         List<TradePost> posts = List.of(samplePost());
-        given(tradePostRepository.searchByTitle("Spring")).willReturn(posts);
+        given(tradePostRepository.search("", null)).willReturn(posts);
 
-        List<TradePost> result = tradePostService.search("  Spring  ");
+        List<TradePost> result = tradePostService.search(null, null);
 
         assertEquals(posts, result);
-        verify(tradePostRepository).searchByTitle("Spring");
+        verify(tradePostRepository).search("", null);
     }
 
     private TradePost samplePost() {
         return new TradePost(
-                1L, "Spring Basics", 15000L, "Student Seller", "Clean copy"
+                1L,
+                "Spring Basics",
+                15000L,
+                "Student Seller",
+                "Clean copy",
+                TradeStatus.SALE
         );
     }
 }

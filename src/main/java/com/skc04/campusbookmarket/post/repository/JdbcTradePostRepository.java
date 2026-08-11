@@ -3,6 +3,7 @@ package com.skc04.campusbookmarket.post.repository;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import java.sql.PreparedStatement;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -44,15 +45,32 @@ public class JdbcTradePostRepository implements TradePostRepository {
     }
 
     @Override
-    public List<TradePost> searchByTitle(String keyword) {
-        String sql = """
+    public List<TradePost> search(String keyword, TradeStatus status) {
+        StringBuilder sql = new StringBuilder("""
                 SELECT id, title, price, seller_name, description, status, created_at, updated_at
                 FROM trade_post
-                WHERE LOWER(title) LIKE LOWER(?)
-                ORDER BY id
-                """;
+                WHERE 1 = 1
+                """);
 
-        return jdbcTemplate.query(sql, TRADE_POST_ROW_MAPPER, "%" + keyword + "%");
+        List<Object> parameters = new ArrayList<>();
+
+        if (!keyword.isBlank()) {
+            sql.append(" AND LOWER(title) LIKE LOWER(?)");
+            parameters.add("%" + keyword + "%");
+        }
+
+        if (status != null) {
+            sql.append(" AND status = ?");
+            parameters.add(status.name());
+        }
+
+        sql.append(" ORDER BY id");
+
+        return jdbcTemplate.query(
+                sql.toString(),
+                TRADE_POST_ROW_MAPPER,
+                parameters.toArray()
+        );
     }
 
     @Override

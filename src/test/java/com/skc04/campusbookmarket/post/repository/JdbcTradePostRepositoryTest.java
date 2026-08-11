@@ -74,14 +74,26 @@ class JdbcTradePostRepositoryTest {
     }
 
     @Test
-    void searchByTitleReturnsOnlyMatchingPosts() {
-        repository.save("Spring MVC 기본", 12000, "판매자1", "설명1");
-        repository.save("운영체제", 15000, "판매자2", "설명2");
+    void searchCombinesKeywordAndStatusFilters() {
+        repository.save("Spring MVC", 15000, "판매자1", "설명1");
+        TradePost springSoldPost = repository.save(
+                "Spring DB", 12000, "판매자2", "설명2"
+        );
+        repository.save("Java 기초", 10000, "판매자3", "설명3");
 
-        List<TradePost> results = repository.searchByTitle("spring");
+        repository.updateStatus(springSoldPost.getId(), TradeStatus.SOLD).orElseThrow();
 
-        assertEquals(1, results.size());
-        assertEquals("Spring MVC 기본", results.get(0).getTitle());
+        List<TradePost> allResults = repository.search("", null);
+        List<TradePost> keywordResults = repository.search("spring", null);
+        List<TradePost> statusResults = repository.search("", TradeStatus.SOLD);
+        List<TradePost> combinedResults = repository.search("spring", TradeStatus.SOLD);
+
+        assertEquals(3, allResults.size());
+        assertEquals(2, keywordResults.size());
+        assertEquals(1, statusResults.size());
+        assertEquals(springSoldPost.getId(), statusResults.get(0).getId());
+        assertEquals(1, combinedResults.size());
+        assertEquals(springSoldPost.getId(), combinedResults.get(0).getId());
     }
 
     @Test

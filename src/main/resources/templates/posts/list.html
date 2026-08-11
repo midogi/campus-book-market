@@ -15,18 +15,35 @@
     <p><a href="/posts/new">게시글 등록</a></p>
 
     <form th:action="@{/posts}" method="get">
-        <label for="keyword">제목 검색</label>
-        <input id="keyword" name="keyword" type="search"
-               th:value="${keyword}" placeholder="전공책 이름을 입력하세요">
+        <div>
+            <label for="keyword">제목 검색</label>
+            <input id="keyword" name="keyword" type="search"
+                   th:value="${keyword}" placeholder="전공책 이름을 입력하세요">
+        </div>
+
+        <div>
+            <label for="status">거래 상태</label>
+            <select id="status" name="status">
+                <option value="">전체 상태</option>
+                <option th:each="tradeStatus : ${tradeStatuses}"
+                        th:value="${tradeStatus.name()}"
+                        th:text="${tradeStatus.displayName}"
+                        th:selected="${tradeStatus == selectedStatus}">
+                    판매 중
+                </option>
+            </select>
+        </div>
+
         <button type="submit">검색</button>
-        <a th:if="${!#strings.isEmpty(keyword)}" th:href="@{/posts}">초기화</a>
+        <a th:if="${!#strings.isEmpty(keyword) or selectedStatus != null}"
+           th:href="@{/posts}">초기화</a>
     </form>
 
-    <p th:if="${#lists.isEmpty(posts) and #strings.isEmpty(keyword)}">
+    <p th:if="${#lists.isEmpty(posts) and #strings.isEmpty(keyword) and selectedStatus == null}">
         아직 등록된 게시글이 없습니다.
     </p>
-    <p th:if="${#lists.isEmpty(posts) and !#strings.isEmpty(keyword)}">
-        검색 결과가 없습니다.
+    <p th:if="${#lists.isEmpty(posts) and (!#strings.isEmpty(keyword) or selectedStatus != null)}">
+        조건에 맞는 게시글이 없습니다.
     </p>
 
     <ul th:unless="${#lists.isEmpty(posts)}">

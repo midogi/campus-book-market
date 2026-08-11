@@ -31,10 +31,13 @@ public class PostController {
     @GetMapping
     public String list(
             @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(required = false) TradeStatus status,
             Model model
     ) {
-        model.addAttribute("posts", tradePostService.search(keyword));
+        model.addAttribute("posts", tradePostService.search(keyword, status));
         model.addAttribute("keyword", keyword);
+        model.addAttribute("tradeStatuses", TradeStatus.values());
+        model.addAttribute("selectedStatus", status);
         return "posts/list";
     }
 

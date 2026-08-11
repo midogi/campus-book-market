@@ -9,7 +9,7 @@ public interface TradePostRepository {
 
     List<TradePost> findAll();
 
-    List<TradePost> searchByTitle(String keyword);
+    List<TradePost> search(String keyword, TradeStatus status);
 
     Optional<TradePost> findById(Long id);
 

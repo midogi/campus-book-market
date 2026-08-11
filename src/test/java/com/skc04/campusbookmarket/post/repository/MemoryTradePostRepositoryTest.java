@@ -5,6 +5,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 
 class MemoryTradePostRepositoryTest {
@@ -58,6 +59,16 @@ class MemoryTradePostRepositoryTest {
         MemoryTradePostRepository repository = new MemoryTradePostRepository();
 
         assertTrue(repository.findById(999L).isEmpty());
+    }
+
+    @Test
+    void searchByTitle_returnsOnlyMatchingPosts() {
+        MemoryTradePostRepository repository = new MemoryTradePostRepository();
+
+        List<TradePost> results = repository.searchByTitle("operating");
+
+        assertEquals(1, results.size());
+        assertEquals("Operating System Concepts", results.get(0).getTitle());
     }
 
     @Test

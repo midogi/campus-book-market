@@ -35,12 +35,25 @@ class PostControllerTest {
     @Test
     void list() throws Exception {
         List<TradePost> posts = List.of(samplePost());
-        given(tradePostService.findAll()).willReturn(posts);
+        given(tradePostService.search("")).willReturn(posts);
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/list"))
-                .andExpect(model().attribute("posts", posts));
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("keyword", ""));
+    }
+
+    @Test
+    void listSearchesByKeyword() throws Exception {
+        List<TradePost> posts = List.of(samplePost());
+        given(tradePostService.search("Spring")).willReturn(posts);
+
+        mockMvc.perform(get("/posts").param("keyword", "Spring"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/list"))
+                .andExpect(model().attribute("posts", posts))
+                .andExpect(model().attribute("keyword", "Spring"));
     }
 
     @Test

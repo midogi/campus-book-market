@@ -44,6 +44,18 @@ public class JdbcTradePostRepository implements TradePostRepository {
     }
 
     @Override
+    public List<TradePost> searchByTitle(String keyword) {
+        String sql = """
+                SELECT id, title, price, seller_name, description, status, created_at, updated_at
+                FROM trade_post
+                WHERE LOWER(title) LIKE LOWER(?)
+                ORDER BY id
+                """;
+
+        return jdbcTemplate.query(sql, TRADE_POST_ROW_MAPPER, "%" + keyword + "%");
+    }
+
+    @Override
     public Optional<TradePost> findById(Long id) {
         String sql = """
                 SELECT id, title, price, seller_name, description, status, created_at, updated_at

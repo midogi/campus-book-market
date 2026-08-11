@@ -14,7 +14,20 @@
     <h1>게시글 목록</h1>
     <p><a href="/posts/new">게시글 등록</a></p>
 
-    <p th:if="${#lists.isEmpty(posts)}">아직 등록된 게시글이 없습니다.</p>
+    <form th:action="@{/posts}" method="get">
+        <label for="keyword">제목 검색</label>
+        <input id="keyword" name="keyword" type="search"
+               th:value="${keyword}" placeholder="전공책 이름을 입력하세요">
+        <button type="submit">검색</button>
+        <a th:if="${!#strings.isEmpty(keyword)}" th:href="@{/posts}">초기화</a>
+    </form>
+
+    <p th:if="${#lists.isEmpty(posts) and #strings.isEmpty(keyword)}">
+        아직 등록된 게시글이 없습니다.
+    </p>
+    <p th:if="${#lists.isEmpty(posts) and !#strings.isEmpty(keyword)}">
+        검색 결과가 없습니다.
+    </p>
 
     <ul th:unless="${#lists.isEmpty(posts)}">
         <li th:each="post : ${posts}">

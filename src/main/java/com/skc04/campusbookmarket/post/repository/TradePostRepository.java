@@ -9,6 +9,8 @@ public interface TradePostRepository {
 
     List<TradePost> findAll();
 
+    List<TradePost> searchByTitle(String keyword);
+
     Optional<TradePost> findById(Long id);
 
     TradePost save(String title, long price, String sellerName, String description);

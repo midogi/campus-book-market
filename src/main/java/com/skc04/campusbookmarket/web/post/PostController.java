@@ -29,8 +29,12 @@ public class PostController {
     }
 
     @GetMapping
-    public String list(Model model) {
-        model.addAttribute("posts", tradePostService.findAll());
+    public String list(
+            @RequestParam(defaultValue = "") String keyword,
+            Model model
+    ) {
+        model.addAttribute("posts", tradePostService.search(keyword));
+        model.addAttribute("keyword", keyword);
         return "posts/list";
     }
 

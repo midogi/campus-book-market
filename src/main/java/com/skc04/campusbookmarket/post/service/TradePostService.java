@@ -21,6 +21,14 @@ public class TradePostService {
         return tradePostRepository.findAll();
     }
 
+    public List<TradePost> search(String keyword) {
+        if (keyword == null || keyword.isBlank()) {
+            return tradePostRepository.findAll();
+        }
+
+        return tradePostRepository.searchByTitle(keyword.trim());
+    }
+
     public Optional<TradePost> findById(Long postId) {
         return tradePostRepository.findById(postId);
     }

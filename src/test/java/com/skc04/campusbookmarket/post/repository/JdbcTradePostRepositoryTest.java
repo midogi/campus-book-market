@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
+import java.util.List;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.jdbc.test.autoconfigure.JdbcTest;
@@ -70,6 +71,17 @@ class JdbcTradePostRepositoryTest {
         assertEquals(TradeStatus.SOLD, updatedPost.getStatus());
         assertEquals(savedPost.getCreatedAt(), updatedPost.getCreatedAt());
         assertNotNull(updatedPost.getUpdatedAt());
+    }
+
+    @Test
+    void searchByTitleReturnsOnlyMatchingPosts() {
+        repository.save("Spring MVC 기본", 12000, "판매자1", "설명1");
+        repository.save("운영체제", 15000, "판매자2", "설명2");
+
+        List<TradePost> results = repository.searchByTitle("spring");
+
+        assertEquals(1, results.size());
+        assertEquals("Spring MVC 기본", results.get(0).getTitle());
     }
 
     @Test

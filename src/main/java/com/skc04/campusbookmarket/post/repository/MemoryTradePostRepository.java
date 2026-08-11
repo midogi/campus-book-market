@@ -5,6 +5,7 @@ import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import java.time.LocalDateTime;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 
@@ -26,6 +27,15 @@ public class MemoryTradePostRepository implements TradePostRepository {
     @Override
     public List<TradePost> findAll() {
         return List.copyOf(storage.values());
+    }
+
+    @Override
+    public List<TradePost> searchByTitle(String keyword) {
+        String lowerCaseKeyword = keyword.toLowerCase(Locale.ROOT);
+
+        return storage.values().stream()
+                .filter(post -> post.getTitle().toLowerCase(Locale.ROOT).contains(lowerCaseKeyword))
+                .toList();
     }
 
     @Override

@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import java.util.List;
@@ -105,6 +106,7 @@ class JdbcTradePostRepositoryTest {
 
         List<TradePost> firstPage = repository.search(
                 "",
+                TradePostSearchType.TITLE,
                 null,
                 TradePostSort.PRICE_ASC,
                 2,
@@ -112,6 +114,7 @@ class JdbcTradePostRepositoryTest {
         );
         List<TradePost> secondPage = repository.search(
                 "",
+                TradePostSearchType.TITLE,
                 null,
                 TradePostSort.PRICE_ASC,
                 2,
@@ -133,9 +136,40 @@ class JdbcTradePostRepositoryTest {
         repository.save("Java 기초", 10000, "판매자3", "설명3");
         repository.updateStatus(soldPost.getId(), TradeStatus.SOLD).orElseThrow();
 
-        assertEquals(3L, repository.count("", null));
-        assertEquals(2L, repository.count("spring", null));
-        assertEquals(1L, repository.count("spring", TradeStatus.SOLD));
+        assertEquals(3L, repository.count("", TradePostSearchType.TITLE, null));
+        assertEquals(2L, repository.count("spring", TradePostSearchType.TITLE, null));
+        assertEquals(1L, repository.count(
+                "spring", TradePostSearchType.TITLE, TradeStatus.SOLD
+        ));
+    }
+
+    @Test
+    void searchUsesSelectedTitleOrSellerField() {
+        TradePost titleMatch = repository.save(
+                "김동민의 스프링 책", 15000, "다른 판매자", "제목만 검색어와 일치"
+        );
+        TradePost sellerMatch = repository.save(
+                "자바 기초", 10000, "김동민", "판매자명만 검색어와 일치"
+        );
+
+        List<TradePost> titleResults = repository.search(
+                "김동민", TradePostSearchType.TITLE, null,
+                TradePostSort.LATEST, 10, 0
+        );
+        List<TradePost> sellerResults = repository.search(
+                "김동민", TradePostSearchType.SELLER, null,
+                TradePostSort.LATEST, 10, 0
+        );
+
+        assertEquals(List.of(titleMatch.getId()), titleResults.stream()
+                .map(TradePost::getId)
+                .toList());
+        assertEquals(List.of(sellerMatch.getId()), sellerResults.stream()
+                .map(TradePost::getId)
+                .toList());
+        assertEquals(1L, repository.count(
+                "김동민", TradePostSearchType.SELLER, null
+        ));
     }
 
     @Test

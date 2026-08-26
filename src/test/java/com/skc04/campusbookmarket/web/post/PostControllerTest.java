@@ -15,6 +15,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.service.TradePostPage;
@@ -40,7 +41,9 @@ class PostControllerTest {
     void list() throws Exception {
         List<TradePost> posts = List.of(samplePost());
         TradePostPage postPage = new TradePostPage(posts, 1, 10, 1);
-        given(tradePostService.search("", null, TradePostSort.LATEST, 1))
+        given(tradePostService.search(
+                "", TradePostSearchType.TITLE, null, TradePostSort.LATEST, 1
+        ))
                 .willReturn(postPage);
 
         mockMvc.perform(get("/posts"))
@@ -49,11 +52,19 @@ class PostControllerTest {
                 .andExpect(model().attribute("posts", posts))
                 .andExpect(model().attribute("postPage", postPage))
                 .andExpect(model().attribute("keyword", ""))
+                .andExpect(model().attribute(
+                        "selectedSearchType", TradePostSearchType.TITLE
+                ))
                 .andExpect(model().attribute("selectedSort", TradePostSort.LATEST))
-                .andExpect(model().attributeExists("tradeStatuses", "sortOptions"))
+                .andExpect(model().attributeExists(
+                        "searchTypes", "tradeStatuses", "sortOptions"
+                ))
+                .andExpect(content().string(containsString("name=\"searchType\"")))
                 .andExpect(content().string(containsString("name=\"sort\"")));
 
-        verify(tradePostService).search("", null, TradePostSort.LATEST, 1);
+        verify(tradePostService).search(
+                "", TradePostSearchType.TITLE, null, TradePostSort.LATEST, 1
+        );
     }
 
     @Test
@@ -62,6 +73,7 @@ class PostControllerTest {
         TradePostPage postPage = new TradePostPage(posts, 2, 10, 11);
         given(tradePostService.search(
                 "Spring",
+                TradePostSearchType.SELLER,
                 TradeStatus.SOLD,
                 TradePostSort.PRICE_DESC,
                 2
@@ -69,6 +81,7 @@ class PostControllerTest {
 
         mockMvc.perform(get("/posts")
                         .param("keyword", "Spring")
+                        .param("searchType", "SELLER")
                         .param("status", "SOLD")
                         .param("sort", "PRICE_DESC")
                         .param("page", "2"))
@@ -77,13 +90,20 @@ class PostControllerTest {
                 .andExpect(model().attribute("posts", posts))
                 .andExpect(model().attribute("postPage", postPage))
                 .andExpect(model().attribute("keyword", "Spring"))
+                .andExpect(model().attribute(
+                        "selectedSearchType", TradePostSearchType.SELLER
+                ))
                 .andExpect(model().attribute("selectedStatus", TradeStatus.SOLD))
                 .andExpect(model().attribute("selectedSort", TradePostSort.PRICE_DESC))
-                .andExpect(model().attributeExists("tradeStatuses", "sortOptions"))
+                .andExpect(model().attributeExists(
+                        "searchTypes", "tradeStatuses", "sortOptions"
+                ))
+                .andExpect(content().string(containsString("searchType=SELLER")))
                 .andExpect(content().string(containsString("page=1")));
 
         verify(tradePostService).search(
                 "Spring",
+                TradePostSearchType.SELLER,
                 TradeStatus.SOLD,
                 TradePostSort.PRICE_DESC,
                 2

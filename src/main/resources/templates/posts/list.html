@@ -16,9 +16,19 @@
 
     <form th:action="@{/posts}" method="get">
         <div>
-            <label for="keyword">제목 검색</label>
+            <label for="searchType">검색 기준</label>
+            <select id="searchType" name="searchType">
+                <option th:each="searchType : ${searchTypes}"
+                        th:value="${searchType.name()}"
+                        th:text="${searchType.displayName}"
+                        th:selected="${searchType == selectedSearchType}">
+                    제목
+                </option>
+            </select>
+
+            <label for="keyword">검색어</label>
             <input id="keyword" name="keyword" type="search"
-                   th:value="${keyword}" placeholder="전공책 이름을 입력하세요">
+                   th:value="${keyword}" placeholder="검색어를 입력하세요">
         </div>
 
         <div>
@@ -48,6 +58,7 @@
 
         <button type="submit">검색</button>
         <a th:if="${!#strings.isEmpty(keyword)
+                    or selectedSearchType.name() != 'TITLE'
                     or selectedStatus != null
                     or selectedSort.name() != 'LATEST'}"
            th:href="@{/posts}">초기화</a>
@@ -71,7 +82,7 @@
 
     <nav th:if="${postPage.totalPages > 0}" aria-label="게시글 페이지">
         <a th:unless="${postPage.first}"
-           th:href="@{/posts(keyword=${keyword}, status=${selectedStatus}, sort=${selectedSort}, page=${postPage.previousPage})}">
+           th:href="@{/posts(keyword=${keyword}, searchType=${selectedSearchType}, status=${selectedStatus}, sort=${selectedSort}, page=${postPage.previousPage})}">
             이전
         </a>
 
@@ -79,12 +90,12 @@
             <strong th:if="${pageNumber == postPage.currentPage}"
                     th:text="${pageNumber}">1</strong>
             <a th:unless="${pageNumber == postPage.currentPage}"
-               th:href="@{/posts(keyword=${keyword}, status=${selectedStatus}, sort=${selectedSort}, page=${pageNumber})}"
+               th:href="@{/posts(keyword=${keyword}, searchType=${selectedSearchType}, status=${selectedStatus}, sort=${selectedSort}, page=${pageNumber})}"
                th:text="${pageNumber}">1</a>
         </span>
 
         <a th:unless="${postPage.last}"
-           th:href="@{/posts(keyword=${keyword}, status=${selectedStatus}, sort=${selectedSort}, page=${postPage.nextPage})}">
+           th:href="@{/posts(keyword=${keyword}, searchType=${selectedSearchType}, status=${selectedStatus}, sort=${selectedSort}, page=${postPage.nextPage})}">
             다음
         </a>
     </nav>

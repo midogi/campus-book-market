@@ -5,6 +5,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.repository.TradePostRepository;
@@ -53,10 +54,13 @@ class TradePostServiceTest {
     @Test
     void searchCalculatesPageOffsetAndMetadata() {
         List<TradePost> posts = List.of(samplePost());
-        given(tradePostRepository.count("Spring", TradeStatus.SALE))
+        given(tradePostRepository.count(
+                "Spring", TradePostSearchType.SELLER, TradeStatus.SALE
+        ))
                 .willReturn(25L);
         given(tradePostRepository.search(
                 "Spring",
+                TradePostSearchType.SELLER,
                 TradeStatus.SALE,
                 TradePostSort.PRICE_DESC,
                 10,
@@ -65,6 +69,7 @@ class TradePostServiceTest {
 
         TradePostPage result = tradePostService.search(
                 "  Spring  ",
+                TradePostSearchType.SELLER,
                 TradeStatus.SALE,
                 TradePostSort.PRICE_DESC,
                 2
@@ -77,6 +82,7 @@ class TradePostServiceTest {
         assertEquals(3, result.getTotalPages());
         verify(tradePostRepository).search(
                 "Spring",
+                TradePostSearchType.SELLER,
                 TradeStatus.SALE,
                 TradePostSort.PRICE_DESC,
                 10,
@@ -87,21 +93,27 @@ class TradePostServiceTest {
     @Test
     void searchUsesDefaultsAndClampsPageToAvailableRange() {
         List<TradePost> posts = List.of(samplePost());
-        given(tradePostRepository.count("", null)).willReturn(12L);
+        given(tradePostRepository.count(
+                "", TradePostSearchType.TITLE, null
+        )).willReturn(12L);
         given(tradePostRepository.search(
                 "",
+                TradePostSearchType.TITLE,
                 null,
                 TradePostSort.LATEST,
                 10,
                 10
         )).willReturn(posts);
 
-        TradePostPage result = tradePostService.search(null, null, null, 99);
+        TradePostPage result = tradePostService.search(
+                null, null, null, null, 99
+        );
 
         assertEquals(2, result.getCurrentPage());
         assertEquals(2, result.getTotalPages());
         verify(tradePostRepository).search(
                 "",
+                TradePostSearchType.TITLE,
                 null,
                 TradePostSort.LATEST,
                 10,

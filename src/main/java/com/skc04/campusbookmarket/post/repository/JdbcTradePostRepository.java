@@ -1,6 +1,7 @@
 package com.skc04.campusbookmarket.post.repository;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import java.sql.PreparedStatement;
@@ -56,12 +57,20 @@ public class JdbcTradePostRepository implements TradePostRepository {
             TradeStatus status,
             TradePostSort sort
     ) {
-        return executeSearch(keyword, status, sort, null, null);
+        return executeSearch(
+                keyword,
+                TradePostSearchType.TITLE,
+                status,
+                sort,
+                null,
+                null
+        );
     }
 
     @Override
     public List<TradePost> search(
             String keyword,
+            TradePostSearchType searchType,
             TradeStatus status,
             TradePostSort sort,
             int limit,
@@ -74,11 +83,15 @@ public class JdbcTradePostRepository implements TradePostRepository {
             throw new IllegalArgumentException("offset은 0 이상이어야 합니다.");
         }
 
-        return executeSearch(keyword, status, sort, limit, offset);
+        return executeSearch(keyword, searchType, status, sort, limit, offset);
     }
 
     @Override
-    public long count(String keyword, TradeStatus status) {
+    public long count(
+            String keyword,
+            TradePostSearchType searchType,
+            TradeStatus status
+    ) {
         StringBuilder sql = new StringBuilder("""
                 SELECT COUNT(*)
                 FROM trade_post
@@ -86,7 +99,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
                 """);
 
         List<Object> parameters = new ArrayList<>();
-        appendSearchConditions(sql, parameters, keyword, status);
+        appendSearchConditions(sql, parameters, keyword, searchType, status);
 
         Long count = jdbcTemplate.queryForObject(
                 sql.toString(),
@@ -98,6 +111,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
 
     private List<TradePost> executeSearch(
             String keyword,
+            TradePostSearchType searchType,
             TradeStatus status,
             TradePostSort sort,
             Integer limit,
@@ -110,7 +124,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
                 """);
 
         List<Object> parameters = new ArrayList<>();
-        appendSearchConditions(sql, parameters, keyword, status);
+        appendSearchConditions(sql, parameters, keyword, searchType, status);
         appendOrderBy(sql, sort);
 
         if (limit != null && offset != null) {
@@ -130,10 +144,18 @@ public class JdbcTradePostRepository implements TradePostRepository {
             StringBuilder sql,
             List<Object> parameters,
             String keyword,
+            TradePostSearchType searchType,
             TradeStatus status
     ) {
         if (keyword != null && !keyword.isBlank()) {
-            sql.append(" AND LOWER(title) LIKE LOWER(?)");
+            TradePostSearchType normalizedSearchType = searchType == null
+                    ? TradePostSearchType.TITLE
+                    : searchType;
+
+            sql.append(switch (normalizedSearchType) {
+                case TITLE -> " AND LOWER(title) LIKE LOWER(?)";
+                case SELLER -> " AND LOWER(seller_name) LIKE LOWER(?)";
+            });
             parameters.add("%" + keyword + "%");
         }
 

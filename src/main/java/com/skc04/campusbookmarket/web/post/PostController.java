@@ -1,6 +1,7 @@
 package com.skc04.campusbookmarket.web.post;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.service.TradePostPage;
@@ -33,16 +34,25 @@ public class PostController {
     @GetMapping
     public String list(
             @RequestParam(defaultValue = "") String keyword,
+            @RequestParam(defaultValue = "TITLE") TradePostSearchType searchType,
             @RequestParam(required = false) TradeStatus status,
             @RequestParam(defaultValue = "LATEST") TradePostSort sort,
             @RequestParam(defaultValue = "1") int page,
             Model model
     ) {
-        TradePostPage postPage = tradePostService.search(keyword, status, sort, page);
+        TradePostPage postPage = tradePostService.search(
+                keyword,
+                searchType,
+                status,
+                sort,
+                page
+        );
 
         model.addAttribute("posts", postPage.getPosts());
         model.addAttribute("postPage", postPage);
         model.addAttribute("keyword", keyword);
+        model.addAttribute("searchTypes", TradePostSearchType.values());
+        model.addAttribute("selectedSearchType", searchType);
         model.addAttribute("tradeStatuses", TradeStatus.values());
         model.addAttribute("selectedStatus", status);
         model.addAttribute("sortOptions", TradePostSort.values());

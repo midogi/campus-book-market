@@ -1,6 +1,7 @@
 package com.skc04.campusbookmarket.post.service;
 
 import com.skc04.campusbookmarket.post.domain.TradePost;
+import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.repository.TradePostRepository;
@@ -41,19 +42,26 @@ public class TradePostService {
 
     public TradePostPage search(
             String keyword,
+            TradePostSearchType searchType,
             TradeStatus status,
             TradePostSort sort,
             int requestedPage
     ) {
         String normalizedKeyword = normalizeKeyword(keyword);
+        TradePostSearchType normalizedSearchType = normalizeSearchType(searchType);
         TradePostSort normalizedSort = normalizeSort(sort);
-        long totalElements = tradePostRepository.count(normalizedKeyword, status);
+        long totalElements = tradePostRepository.count(
+                normalizedKeyword,
+                normalizedSearchType,
+                status
+        );
         int totalPages = calculateTotalPages(totalElements);
         int currentPage = normalizePage(requestedPage, totalPages);
         int offset = (currentPage - 1) * DEFAULT_PAGE_SIZE;
 
         List<TradePost> posts = tradePostRepository.search(
                 normalizedKeyword,
+                normalizedSearchType,
                 status,
                 normalizedSort,
                 DEFAULT_PAGE_SIZE,
@@ -96,6 +104,10 @@ public class TradePostService {
 
     private String normalizeKeyword(String keyword) {
         return keyword == null ? "" : keyword.trim();
+    }
+
+    private TradePostSearchType normalizeSearchType(TradePostSearchType searchType) {
+        return searchType == null ? TradePostSearchType.TITLE : searchType;
     }
 
     private TradePostSort normalizeSort(TradePostSort sort) {

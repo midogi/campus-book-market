@@ -8,12 +8,14 @@ import com.skc04.campusbookmarket.post.repository.TradePostRepository;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * 컨트롤러의 요청을 저장소 작업으로 연결하고 검색·페이징 규칙을 적용한다.
  * 저장 기술은 TradePostRepository 인터페이스 뒤에 숨겨져 있다.
  */
 @Service
+@Transactional(readOnly = true)
 public class TradePostService {
 
     private static final int DEFAULT_PAGE_SIZE = 10;
@@ -85,10 +87,12 @@ public class TradePostService {
         return tradePostRepository.findById(postId);
     }
 
+    @Transactional
     public TradePost create(String title, long price, String sellerName, String description) {
         return tradePostRepository.save(title, price, sellerName, description);
     }
 
+    @Transactional
     public Optional<TradePost> update(
             Long postId,
             String title,
@@ -99,10 +103,12 @@ public class TradePostService {
         return tradePostRepository.update(postId, title, price, sellerName, description);
     }
 
+    @Transactional
     public Optional<TradePost> updateStatus(Long postId, TradeStatus status) {
         return tradePostRepository.updateStatus(postId, status);
     }
 
+    @Transactional
     public boolean delete(Long postId) {
         return tradePostRepository.deleteById(postId);
     }

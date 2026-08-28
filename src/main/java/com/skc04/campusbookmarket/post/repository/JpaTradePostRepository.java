@@ -9,8 +9,8 @@ import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.context.annotation.Primary;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * EntityManager를 사용해 거래 게시글을 저장하고 조회한다.
@@ -25,26 +25,29 @@ public class JpaTradePostRepository implements TradePostRepository {
     private static final int UNPAGED_LIMIT = Integer.MAX_VALUE;
 
     private final EntityManager entityManager;
+    private final SpringDataTradePostRepository springDataRepository;
 
-    public JpaTradePostRepository(EntityManager entityManager) {
+    public JpaTradePostRepository(
+            EntityManager entityManager,
+            SpringDataTradePostRepository springDataRepository
+    ) {
         this.entityManager = entityManager;
+        this.springDataRepository = springDataRepository;
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<TradePost> findAll() {
-        String jpql = """
-                SELECT post
-                FROM TradePost post
-                ORDER BY post.id
-                """;
-
-        return entityManager.createQuery(jpql, TradePost.class)
-                .getResultList();
+        return springDataRepository.findAll(
+                Sort.by("id").ascending()
+        );
     }
 
     @Override
-    @Transactional(readOnly = true)
+    public Optional<TradePost> findById(Long id) {
+        return springDataRepository.findById(id);
+    }
+
+    @Override
     public List<TradePost> search(String keyword, TradeStatus status) {
         return search(
                 keyword,
@@ -57,7 +60,6 @@ public class JpaTradePostRepository implements TradePostRepository {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<TradePost> search(
             String keyword,
             TradeStatus status,
@@ -74,7 +76,6 @@ public class JpaTradePostRepository implements TradePostRepository {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public List<TradePost> search(
             String keyword,
             TradePostSearchType searchType,
@@ -107,7 +108,6 @@ public class JpaTradePostRepository implements TradePostRepository {
     }
 
     @Override
-    @Transactional(readOnly = true)
     public long count(
             String keyword,
             TradePostSearchType searchType,
@@ -131,14 +131,6 @@ public class JpaTradePostRepository implements TradePostRepository {
     }
 
     @Override
-    @Transactional(readOnly = true)
-    public Optional<TradePost> findById(Long id) {
-        TradePost post = entityManager.find(TradePost.class, id);
-        return Optional.ofNullable(post);
-    }
-
-    @Override
-    @Transactional
     public TradePost save(
             String title,
             long price,
@@ -146,12 +138,10 @@ public class JpaTradePostRepository implements TradePostRepository {
             String description
     ) {
         TradePost post = new TradePost(title, price, sellerName, description);
-        entityManager.persist(post);
-        return post;
+        return springDataRepository.save(post);
     }
 
     @Override
-    @Transactional
     public Optional<TradePost> update(
             Long id,
             String title,
@@ -159,38 +149,36 @@ public class JpaTradePostRepository implements TradePostRepository {
             String sellerName,
             String description
     ) {
-        TradePost post = entityManager.find(TradePost.class, id);
-        if (post == null) {
+        Optional<TradePost> foundPost = springDataRepository.findById(id);
+        if (foundPost.isEmpty()) {
             return Optional.empty();
         }
-
-        // 영속 엔티티의 값을 변경하면 커밋 시점에 UPDATE가 자동 실행된다.
+        TradePost post = foundPost.get();
         post.updateDetails(title, price, sellerName, description);
+
         return Optional.of(post);
     }
 
     @Override
-    @Transactional
     public Optional<TradePost> updateStatus(Long id, TradeStatus status) {
-        TradePost post = entityManager.find(TradePost.class, id);
-        if (post == null) {
+
+        Optional<TradePost> foundPost = springDataRepository.findById(id);
+        if (foundPost.isEmpty()) {
             return Optional.empty();
         }
-
+        TradePost post = foundPost.get();
         post.changeStatus(status);
         return Optional.of(post);
     }
 
     @Override
-    @Transactional
     public boolean deleteById(Long id) {
-        TradePost post = entityManager.find(TradePost.class, id);
-        if (post == null) {
+        Optional<TradePost> foundPost = springDataRepository.findById(id);
+        if (foundPost.isEmpty()) {
             return false;
         }
 
-        // remove()는 영속 상태의 엔티티를 삭제 대상으로 등록한다.
-        entityManager.remove(post);
+        springDataRepository.delete(foundPost.get());
         return true;
     }
 

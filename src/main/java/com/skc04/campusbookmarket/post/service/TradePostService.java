@@ -9,7 +9,10 @@ import java.util.List;
 import java.util.Optional;
 import org.springframework.stereotype.Service;
 
-
+/**
+ * 컨트롤러의 요청을 저장소 작업으로 연결하고 검색·페이징 규칙을 적용한다.
+ * 저장 기술은 TradePostRepository 인터페이스 뒤에 숨겨져 있다.
+ */
 @Service
 public class TradePostService {
 
@@ -47,6 +50,7 @@ public class TradePostService {
             TradePostSort sort,
             int requestedPage
     ) {
+        // URL 파라미터가 비어 있거나 null이어도 저장소에는 정규화된 값을 전달한다.
         String normalizedKeyword = normalizeKeyword(keyword);
         TradePostSearchType normalizedSearchType = normalizeSearchType(searchType);
         TradePostSort normalizedSort = normalizeSort(sort);
@@ -59,6 +63,7 @@ public class TradePostService {
         int currentPage = normalizePage(requestedPage, totalPages);
         int offset = (currentPage - 1) * DEFAULT_PAGE_SIZE;
 
+        // 전체 개수는 페이지 정보에, limit/offset 조회 결과는 현재 화면에 사용한다.
         List<TradePost> posts = tradePostRepository.search(
                 normalizedKeyword,
                 normalizedSearchType,

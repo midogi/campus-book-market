@@ -14,9 +14,16 @@ import org.springframework.jdbc.support.GeneratedKeyHolder;
 import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Repository;
 
+/**
+ * JdbcTemplate 기반의 거래 게시글 저장소다.
+ *
+ * <p>현재 애플리케이션의 기본 구현은 {@link JpaTradePostRepository}이며, 이 클래스는
+ * JDBC와 JPA의 차이를 비교하고 기존 저장소 테스트를 유지하기 위해 남겨 둔다.</p>
+ */
 @Repository
 public class JdbcTradePostRepository implements TradePostRepository {
 
+    // JDBC 조회 결과 한 행의 컬럼을 TradePost 생성자 인수에 대응시킨다.
     private static final RowMapper<TradePost> TRADE_POST_ROW_MAPPER =
             (resultSet, rowNumber) -> new TradePost(
                     resultSet.getLong("id"),
@@ -127,6 +134,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
         appendSearchConditions(sql, parameters, keyword, searchType, status);
         appendOrderBy(sql, sort);
 
+        // limit이 전달된 검색에서만 페이징 구문과 바인딩 값을 추가한다.
         if (limit != null && offset != null) {
             sql.append(" LIMIT ? OFFSET ?");
             parameters.add(limit);
@@ -147,6 +155,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
             TradePostSearchType searchType,
             TradeStatus status
     ) {
+        // 사용자 입력은 SQL에 직접 연결하지 않고 ? 파라미터로 바인딩한다.
         if (keyword != null && !keyword.isBlank()) {
             TradePostSearchType normalizedSearchType = searchType == null
                     ? TradePostSearchType.TITLE
@@ -196,6 +205,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
 
+        // INSERT 후 DB가 생성한 identity 값을 KeyHolder로 돌려받는다.
         jdbcTemplate.update(connection -> {
             PreparedStatement statement = connection.prepareStatement(sql, new String[]{"id"});
             statement.setString(1, title);

@@ -1,5 +1,6 @@
 package com.skc04.campusbookmarket.post.domain;
 
+/** 게시글이 현재 어느 거래 단계에 있는지 나타낸다. */
 public enum TradeStatus {
 
     SALE("판매 중"),
@@ -15,6 +16,4 @@ public enum TradeStatus {
     public String getDisplayName() {
         return displayName;
     }
-
-
 }

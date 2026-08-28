@@ -5,6 +5,10 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
+/**
+ * 게시글 등록 폼의 HTTP 입력을 받는 객체다.
+ * 엔티티와 분리해 화면 검증 규칙이 도메인 모델에 섞이지 않게 한다.
+ */
 public class PostCreateForm {
 
     @NotBlank(message = "제목은 필수입니다.")

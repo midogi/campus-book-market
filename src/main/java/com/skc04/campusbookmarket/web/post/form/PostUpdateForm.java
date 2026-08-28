@@ -5,6 +5,7 @@ import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
 
+/** 게시글 수정 폼의 입력값과 Bean Validation 규칙을 담는다. */
 public class PostUpdateForm {
 
     @NotBlank(message = "제목은 필수입니다.")

@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
 
+/** 거래 게시글의 목록·등록·조회·수정·삭제 화면 요청을 처리한다. */
 @Controller
 @RequestMapping("/posts")
 public class PostController {
@@ -40,6 +41,7 @@ public class PostController {
             @RequestParam(defaultValue = "1") int page,
             Model model
     ) {
+        // 서비스가 검색 결과와 페이지 계산을 마치면 컨트롤러는 화면 데이터만 구성한다.
         TradePostPage postPage = tradePostService.search(
                 keyword,
                 searchType,
@@ -71,6 +73,7 @@ public class PostController {
             @Valid @ModelAttribute("postCreateForm") PostCreateForm form,
             BindingResult bindingResult
     ) {
+        // 검증 실패 시 새 요청을 만들지 않아야 입력값과 오류 정보가 그대로 유지된다.
         if (bindingResult.hasErrors()) {
             return "posts/new";
         }
@@ -82,6 +85,7 @@ public class PostController {
                 form.getDescription()
         );
 
+        // PRG 패턴으로 등록 POST의 새로고침 중복 실행을 방지한다.
         return "redirect:/posts/" + savedPost.getId();
     }
 
@@ -107,6 +111,7 @@ public class PostController {
             BindingResult bindingResult,
             Model model
     ) {
+        // 존재하지 않는 게시글의 수정 화면 요청은 먼저 404로 처리한다.
         findPostById(postId);
 
         if (bindingResult.hasErrors()) {
@@ -123,6 +128,7 @@ public class PostController {
                 )
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
 
+        // 수정 POST를 마친 뒤 상세 GET 요청으로 전환한다.
         return "redirect:/posts/" + updatedPost.getId();
     }
 
@@ -153,6 +159,7 @@ public class PostController {
     }
 
     private TradePost findPostById(Long postId) {
+        // 저장소의 빈 Optional을 웹 계층의 404 응답 의미로 변환한다.
         return tradePostService.findById(postId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }

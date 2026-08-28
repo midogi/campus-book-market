@@ -6,6 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+import com.skc04.campusbookmarket.config.QuerydslConfig;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
@@ -20,7 +21,10 @@ import org.springframework.context.annotation.Import;
 
 /** JPA 매핑과 저장소 쿼리를 내장 H2 데이터베이스에서 검증한다. */
 @DataJpaTest
-@Import(JpaTradePostRepository.class)
+@Import({
+        JpaTradePostRepository.class,
+        QuerydslConfig.class
+})
 class JpaTradePostRepositoryTest {
 
     @Autowired

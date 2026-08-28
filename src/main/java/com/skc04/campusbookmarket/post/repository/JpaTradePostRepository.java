@@ -1,5 +1,7 @@
 package com.skc04.campusbookmarket.post.repository;
 
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.skc04.campusbookmarket.post.domain.QTradePost;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
@@ -9,7 +11,6 @@ import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.context.annotation.Primary;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Repository;
 
 /**
@@ -26,20 +27,26 @@ public class JpaTradePostRepository implements TradePostRepository {
 
     private final EntityManager entityManager;
     private final SpringDataTradePostRepository springDataRepository;
+    private final JPAQueryFactory queryFactory;
 
     public JpaTradePostRepository(
             EntityManager entityManager,
-            SpringDataTradePostRepository springDataRepository
+            SpringDataTradePostRepository springDataRepository,
+            JPAQueryFactory queryFactory
     ) {
         this.entityManager = entityManager;
         this.springDataRepository = springDataRepository;
+        this.queryFactory = queryFactory;
     }
 
     @Override
     public List<TradePost> findAll() {
-        return springDataRepository.findAll(
-                Sort.by("id").ascending()
-        );
+        QTradePost post = QTradePost.tradePost;
+
+        return queryFactory
+                .selectFrom(post)
+                .orderBy(post.id.asc())
+                .fetch();
     }
 
     @Override

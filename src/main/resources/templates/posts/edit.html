@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>게시글 수정 - Campus Book Market</title>
+    <title th:text="#{title.post.edit}">게시글 수정 - Campus Book Market</title>
 </head>
 <body>
 <header>
@@ -11,38 +11,39 @@
 </header>
 
 <main>
-    <h1>게시글 수정</h1>
+    <h1 th:text="#{page.post.edit}">게시글 수정</h1>
 
     <form th:action="@{/posts/{postId}/edit(postId=${postId})}" th:object="${postUpdateForm}" method="post">
         <div>
-            <label for="title">제목</label>
+            <label for="title" th:text="#{label.post.title}">제목</label>
             <input id="title" type="text" th:field="*{title}" required>
             <p th:if="${#fields.hasErrors('title')}" th:errors="*{title}">제목 오류</p>
         </div>
 
         <div>
-            <label for="price">가격</label>
+            <label for="price" th:text="#{label.post.price}">가격</label>
             <input id="price" type="number" min="0" th:field="*{price}" required>
             <p th:if="${#fields.hasErrors('price')}" th:errors="*{price}">가격 오류</p>
         </div>
 
         <div>
-            <label for="sellerName">판매자</label>
+            <label for="sellerName" th:text="#{label.post.sellerName}">판매자</label>
             <input id="sellerName" type="text" th:field="*{sellerName}" required>
             <p th:if="${#fields.hasErrors('sellerName')}" th:errors="*{sellerName}">판매자 오류</p>
         </div>
 
         <div>
-            <label for="description">상품 설명</label>
+            <label for="description" th:text="#{label.post.description}">상품 설명</label>
             <textarea id="description" rows="8" maxlength="1000"
                       th:field="*{description}" required></textarea>
             <p th:if="${#fields.hasErrors('description')}" th:errors="*{description}">상품 설명 오류</p>
         </div>
 
-        <button type="submit">수정 저장</button>
+        <button type="submit" th:text="#{button.post.update}">수정 저장</button>
     </form>
 
-    <a th:href="@{/posts/{postId}(postId=${postId})}">상세로 돌아가기</a>
+    <a th:href="@{/posts/{postId}(postId=${postId})}"
+       th:text="#{link.post.detail}">상세로 돌아가기</a>
 </main>
 </body>
 </html>

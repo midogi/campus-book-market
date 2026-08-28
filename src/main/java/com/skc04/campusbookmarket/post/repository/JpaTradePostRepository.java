@@ -1,13 +1,13 @@
 package com.skc04.campusbookmarket.post.repository;
 
+import com.querydsl.core.types.OrderSpecifier;
+import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import com.skc04.campusbookmarket.post.domain.QTradePost;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
-import jakarta.persistence.EntityManager;
-import jakarta.persistence.TypedQuery;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.context.annotation.Primary;
@@ -24,17 +24,14 @@ import org.springframework.stereotype.Repository;
 public class JpaTradePostRepository implements TradePostRepository {
 
     private static final int UNPAGED_LIMIT = Integer.MAX_VALUE;
-
-    private final EntityManager entityManager;
     private final SpringDataTradePostRepository springDataRepository;
     private final JPAQueryFactory queryFactory;
 
     public JpaTradePostRepository(
-            EntityManager entityManager,
             SpringDataTradePostRepository springDataRepository,
             JPAQueryFactory queryFactory
     ) {
-        this.entityManager = entityManager;
+
         this.springDataRepository = springDataRepository;
         this.queryFactory = queryFactory;
     }
@@ -92,26 +89,18 @@ public class JpaTradePostRepository implements TradePostRepository {
             int offset
     ) {
         validatePagination(limit, offset);
+        QTradePost post = QTradePost.tradePost;
 
-        StringBuilder jpql = new StringBuilder("""
-                SELECT post
-                FROM TradePost post
-                WHERE 1 = 1
-                """);
-
-        appendSearchConditions(jpql, keyword, searchType, status);
-        appendOrderBy(jpql, sort);
-
-        TypedQuery<TradePost> query = entityManager.createQuery(
-                jpql.toString(),
-                TradePost.class
-        );
-        bindSearchParameters(query, keyword, status);
-
-        // JPA가 DB 방언에 맞는 OFFSET/LIMIT 구문으로 변환한다.
-        query.setFirstResult(offset);
-        query.setMaxResults(limit);
-        return query.getResultList();
+        return queryFactory
+                .selectFrom(post)
+                .where(
+                        keywordCondition(post, keyword, searchType),
+                        statusCondition(post, status)
+                )
+                .orderBy(orderSpecifiers(post, sort))
+                .offset(offset)
+                .limit(limit)
+                .fetch();
     }
 
     @Override
@@ -120,21 +109,18 @@ public class JpaTradePostRepository implements TradePostRepository {
             TradePostSearchType searchType,
             TradeStatus status
     ) {
-        StringBuilder jpql = new StringBuilder("""
-                SELECT COUNT(post)
-                FROM TradePost post
-                WHERE 1 = 1
-                """);
+        QTradePost post = QTradePost.tradePost;
 
-        // 목록과 개수 쿼리에 같은 조건을 적용해야 전체 페이지 수가 정확해진다.
-        appendSearchConditions(jpql, keyword, searchType, status);
+        Long result = queryFactory
+                .select(post.count())
+                .from(post)
+                .where(
+                        keywordCondition(post, keyword, searchType),
+                        statusCondition(post, status)
+                )
+                .fetchOne();
 
-        TypedQuery<Long> query = entityManager.createQuery(
-                jpql.toString(),
-                Long.class
-        );
-        bindSearchParameters(query, keyword, status);
-        return query.getSingleResult();
+        return result == null ? 0L : result;
     }
 
     @Override
@@ -189,51 +175,6 @@ public class JpaTradePostRepository implements TradePostRepository {
         return true;
     }
 
-    private void appendSearchConditions(
-            StringBuilder jpql,
-            String keyword,
-            TradePostSearchType searchType,
-            TradeStatus status
-    ) {
-        if (hasKeyword(keyword)) {
-            TradePostSearchType normalizedSearchType = searchType == null
-                    ? TradePostSearchType.TITLE
-                    : searchType;
-
-            jpql.append(switch (normalizedSearchType) {
-                case TITLE -> " AND LOWER(post.title) LIKE LOWER(:keyword)";
-                case SELLER -> " AND LOWER(post.sellerName) LIKE LOWER(:keyword)";
-            });
-        }
-
-        if (status != null) {
-            jpql.append(" AND post.status = :status");
-        }
-    }
-
-    private void appendOrderBy(StringBuilder jpql, TradePostSort sort) {
-        TradePostSort normalizedSort = sort == null ? TradePostSort.LATEST : sort;
-
-        // id를 보조 정렬 기준으로 사용해 페이지 사이의 순서를 안정적으로 유지한다.
-        jpql.append(switch (normalizedSort) {
-            case LATEST -> " ORDER BY post.createdAt DESC, post.id DESC";
-            case PRICE_ASC -> " ORDER BY post.price ASC, post.id DESC";
-            case PRICE_DESC -> " ORDER BY post.price DESC, post.id DESC";
-        });
-    }
-
-    private void bindSearchParameters(
-            TypedQuery<?> query,
-            String keyword,
-            TradeStatus status
-    ) {
-        if (hasKeyword(keyword)) {
-            query.setParameter("keyword", "%" + keyword + "%");
-        }
-        if (status != null) {
-            query.setParameter("status", status);
-        }
-    }
 
     private boolean hasKeyword(String keyword) {
         return keyword != null && !keyword.isBlank();
@@ -246,5 +187,59 @@ public class JpaTradePostRepository implements TradePostRepository {
         if (offset < 0) {
             throw new IllegalArgumentException("offset은 0 이상이어야 합니다.");
         }
+    }
+
+    private BooleanExpression keywordCondition(
+            QTradePost post,
+            String keyword,
+            TradePostSearchType searchType
+    ) {
+        if (!hasKeyword(keyword)) {
+            return null;
+        }
+
+        TradePostSearchType normalizedSearchType =
+                searchType == null
+                        ? TradePostSearchType.TITLE
+                        : searchType;
+
+        return switch (normalizedSearchType) {
+            case TITLE -> post.title.containsIgnoreCase(keyword);
+            case SELLER -> post.sellerName.containsIgnoreCase(keyword);
+        };
+    }
+
+    private BooleanExpression statusCondition(
+            QTradePost post,
+            TradeStatus status
+    ) {
+        if (status == null) {
+            return null;
+        }
+        return post.status.eq(status);
+    }
+
+    private OrderSpecifier<?>[] orderSpecifiers(
+            QTradePost post,
+            TradePostSort sort
+    ) {
+        TradePostSort normalizedSort = sort == null
+                ? TradePostSort.LATEST
+                : sort;
+
+        return switch (normalizedSort) {
+            case LATEST -> new OrderSpecifier<?>[]{
+                    post.createdAt.desc(),
+                    post.id.desc()
+            };
+            case PRICE_ASC -> new OrderSpecifier<?>[]{
+                    post.price.asc(),
+                    post.id.desc()
+            };
+            case PRICE_DESC -> new OrderSpecifier<?>[]{
+                    post.price.desc(),
+                    post.id.desc()
+            };
+        };
     }
 }

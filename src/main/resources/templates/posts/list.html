@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>게시글 목록 - Campus Book Market</title>
+    <title th:text="#{title.post.list}">게시글 목록 - Campus Book Market</title>
 </head>
 <body>
 <header>
@@ -11,33 +11,35 @@
 </header>
 
 <main>
-    <h1>게시글 목록</h1>
-    <p><a href="/posts/new">게시글 등록</a></p>
+    <h1 th:text="#{page.post.list}">게시글 목록</h1>
+    <p><a href="/posts/new" th:text="#{link.post.create}">게시글 등록</a></p>
 
     <form th:action="@{/posts}" method="get">
         <div>
-            <label for="searchType">검색 기준</label>
+            <label for="searchType" th:text="#{label.search.type}">검색 기준</label>
             <select id="searchType" name="searchType">
                 <option th:each="searchType : ${searchTypes}"
                         th:value="${searchType.name()}"
-                        th:text="${searchType.displayName}"
+                        th:text="#{${'searchType.' + searchType.name()}}"
                         th:selected="${searchType == selectedSearchType}">
                     제목
                 </option>
             </select>
 
-            <label for="keyword">검색어</label>
+            <label for="keyword" th:text="#{label.search.keyword}">검색어</label>
             <input id="keyword" name="keyword" type="search"
-                   th:value="${keyword}" placeholder="검색어를 입력하세요">
+                   th:value="${keyword}"
+                   th:placeholder="#{placeholder.search.keyword}"
+                   placeholder="검색어를 입력하세요">
         </div>
 
         <div>
-            <label for="status">거래 상태</label>
+            <label for="status" th:text="#{label.search.status}">거래 상태</label>
             <select id="status" name="status">
-                <option value="">전체 상태</option>
+                <option value="" th:text="#{option.status.all}">전체 상태</option>
                 <option th:each="tradeStatus : ${tradeStatuses}"
                         th:value="${tradeStatus.name()}"
-                        th:text="${tradeStatus.displayName}"
+                        th:text="#{${'tradeStatus.' + tradeStatus.name()}}"
                         th:selected="${tradeStatus == selectedStatus}">
                     판매 중
                 </option>
@@ -45,45 +47,50 @@
         </div>
 
         <div>
-            <label for="sort">정렬</label>
+            <label for="sort" th:text="#{label.search.sort}">정렬</label>
             <select id="sort" name="sort">
                 <option th:each="sortOption : ${sortOptions}"
                         th:value="${sortOption.name()}"
-                        th:text="${sortOption.displayName}"
+                        th:text="#{${'tradeSort.' + sortOption.name()}}"
                         th:selected="${sortOption == selectedSort}">
                     최신순
                 </option>
             </select>
         </div>
 
-        <button type="submit">검색</button>
+        <button type="submit" th:text="#{button.search}">검색</button>
         <a th:if="${!#strings.isEmpty(keyword)
                     or selectedSearchType.name() != 'TITLE'
                     or selectedStatus != null
                     or selectedSort.name() != 'LATEST'}"
-           th:href="@{/posts}">초기화</a>
+           th:href="@{/posts}"
+           th:text="#{link.search.reset}">초기화</a>
     </form>
 
-    <p th:if="${#lists.isEmpty(posts) and #strings.isEmpty(keyword) and selectedStatus == null}">
+    <p th:if="${#lists.isEmpty(posts) and #strings.isEmpty(keyword) and selectedStatus == null}"
+       th:text="#{empty.posts.default}">
         아직 등록된 게시글이 없습니다.
     </p>
-    <p th:if="${#lists.isEmpty(posts) and (!#strings.isEmpty(keyword) or selectedStatus != null)}">
+    <p th:if="${#lists.isEmpty(posts) and (!#strings.isEmpty(keyword) or selectedStatus != null)}"
+       th:text="#{empty.posts.filtered}">
         조건에 맞는 게시글이 없습니다.
     </p>
 
     <ul th:unless="${#lists.isEmpty(posts)}">
         <li th:each="post : ${posts}">
             <a th:href="@{/posts/{postId}(postId=${post.id})}" th:text="${post.title}">게시글 제목</a>
-            <span th:text="${post.price} + '원'">0원</span>
+            <span th:text="#{format.price(${post.price})}">0원</span>
             <span th:text="${post.sellerName}">판매자</span>
-            <span th:text="${post.status.displayName}">판매 중</span>
+            <span th:text="#{${'tradeStatus.' + post.status.name()}}">판매 중</span>
         </li>
     </ul>
 
-    <nav th:if="${postPage.totalPages > 0}" aria-label="게시글 페이지">
+    <nav th:if="${postPage.totalPages > 0}"
+         aria-label="게시글 페이지"
+         th:attr="aria-label=#{aria.posts.pagination}">
         <a th:unless="${postPage.first}"
            th:href="@{/posts(keyword=${keyword}, searchType=${selectedSearchType}, status=${selectedStatus}, sort=${selectedSort}, page=${postPage.previousPage})}">
-            이전
+            <span th:text="#{pagination.previous}">이전</span>
         </a>
 
         <span th:each="pageNumber : ${postPage.pageNumbers}">
@@ -96,7 +103,7 @@
 
         <a th:unless="${postPage.last}"
            th:href="@{/posts(keyword=${keyword}, searchType=${selectedSearchType}, status=${selectedStatus}, sort=${selectedSort}, page=${postPage.nextPage})}">
-            다음
+            <span th:text="#{pagination.next}">다음</span>
         </a>
     </nav>
 </main>

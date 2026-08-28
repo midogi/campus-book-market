@@ -21,6 +21,7 @@ import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.service.TradePostPage;
 import com.skc04.campusbookmarket.post.service.TradePostService;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -135,6 +136,16 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/new"))
                 .andExpect(model().attributeExists("postCreateForm"));
+    }
+
+    @Test
+    void createFormUsesEnglishMessages() throws Exception {
+        mockMvc.perform(get("/posts/new").locale(Locale.ENGLISH))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/new"))
+                .andExpect(content().string(containsString("Create Post")))
+                .andExpect(content().string(containsString("Seller")))
+                .andExpect(content().string(containsString("Back to List")));
     }
 
     @Test

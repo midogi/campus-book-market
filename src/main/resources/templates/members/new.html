@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="ko"
+      th:lang="${#locale.language}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+    <title th:text="#{title.member.create}">
+        회원가입 - Campus Book Market
+    </title>
+</head>
+<body>
+<header>
+    <a href="/">Campus Book Market</a>
+</header>
+
+<main>
+    <h1 th:text="#{page.member.create}">회원가입</h1>
+
+    <form th:action="@{/members}"
+          th:object="${memberCreateForm}"
+          method="post">
+
+        <div>
+            <label for="loginId"
+                   th:text="#{label.member.loginId}">
+                로그인 아이디
+            </label>
+
+            <input id="loginId"
+                   type="text"
+                   th:field="*{loginId}">
+
+            <p th:if="${#fields.hasErrors('loginId')}"
+               th:errors="*{loginId}">
+                로그인 아이디 오류
+            </p>
+        </div>
+
+        <div>
+            <label for="password"
+                   th:text="#{label.member.password}">
+                비밀번호
+            </label>
+
+            <input id="password"
+                   type="password"
+                   th:field="*{password}">
+
+            <p th:if="${#fields.hasErrors('password')}"
+               th:errors="*{password}">
+                비밀번호 오류
+            </p>
+        </div>
+
+        <div>
+            <label for="passwordConfirm"
+                   th:text="#{label.member.passwordConfirm}">
+                비밀번호 확인
+            </label>
+
+            <input id="passwordConfirm"
+                   type="password"
+                   th:field="*{passwordConfirm}">
+
+            <p th:if="${#fields.hasErrors('passwordConfirm')}"
+               th:errors="*{passwordConfirm}">
+                비밀번호 확인 오류
+            </p>
+        </div>
+
+        <div>
+            <label for="name"
+                   th:text="#{label.member.name}">
+                이름
+            </label>
+
+            <input id="name"
+                   type="text"
+                   th:field="*{name}">
+
+            <p th:if="${#fields.hasErrors('name')}"
+               th:errors="*{name}">
+                이름 오류
+            </p>
+        </div>
+
+        <button type="submit"
+                th:text="#{button.member.create}">
+            회원가입
+        </button>
+    </form>
+
+    <a href="/" th:text="#{link.home}">
+        홈으로 돌아가기
+    </a>
+</main>
+</body>
+</html>

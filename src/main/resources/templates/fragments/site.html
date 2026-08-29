@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<body>
+<header class="site-header" th:fragment="header">
+    <div class="shell site-header__inner">
+        <a class="brand" th:href="@{/}" href="/">
+            <span class="brand__mark" aria-hidden="true">CB</span>
+            <span class="brand__name">
+                <strong>Campus</strong>
+                <span>Book Market</span>
+            </span>
+        </a>
+
+        <nav class="primary-nav"
+             aria-label="주요 메뉴"
+             th:attr="aria-label=#{aria.primary.navigation}">
+            <a class="primary-nav__link"
+               th:href="@{/posts}"
+               th:text="#{nav.posts}">거래 게시판</a>
+            <a class="primary-nav__link primary-nav__link--accent"
+               th:href="@{/members/new}"
+               th:text="#{nav.join}">회원가입</a>
+        </nav>
+    </div>
+</header>
+
+<footer class="site-footer" th:fragment="footer">
+    <div class="shell site-footer__inner">
+        <p>Campus Book Market</p>
+        <p th:text="#{footer.copy}">대학생 전공책과 학습용품 거래 공간</p>
+    </div>
+</footer>
+</body>
+</html>

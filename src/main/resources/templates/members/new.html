@@ -9,20 +9,28 @@
     <title th:text="#{title.member.create}">
         회원가입 - Campus Book Market
     </title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
 </head>
 <body>
-<header>
-    <a href="/">Campus Book Market</a>
-</header>
+<a class="skip-link" href="#main-content" th:text="#{aria.skip.content}">본문으로 건너뛰기</a>
+<header th:replace="~{fragments/site :: header}"></header>
 
-<main>
-    <h1 th:text="#{page.member.create}">회원가입</h1>
+<main id="main-content" class="page-shell page-shell--wide auth-page">
+    <section class="auth-intro">
+        <div class="auth-intro__mark" aria-hidden="true">CB</div>
+        <p class="eyebrow">Campus Book Market</p>
+        <h1 th:text="#{page.member.create}">회원가입</h1>
+        <p th:text="#{home.description}">
+            대학생 전공책과 학습용품을 거래하는 공간입니다.
+        </p>
+    </section>
 
-    <form th:action="@{/members}"
+    <form class="form-panel form-stack"
+          th:action="@{/members}"
           th:object="${memberCreateForm}"
           method="post">
 
-        <div>
+        <div class="field">
             <label for="loginId"
                    th:text="#{label.member.loginId}">
                 로그인 아이디
@@ -30,15 +38,19 @@
 
             <input id="loginId"
                    type="text"
-                   th:field="*{loginId}">
+                   autocomplete="username"
+                   th:field="*{loginId}"
+                   th:classappend="${#fields.hasErrors('loginId')} ? 'is-invalid' : ''"
+                   th:attr="aria-invalid=${#fields.hasErrors('loginId')}">
 
-            <p th:if="${#fields.hasErrors('loginId')}"
+            <p class="field-error"
+               th:if="${#fields.hasErrors('loginId')}"
                th:errors="*{loginId}">
                 로그인 아이디 오류
             </p>
         </div>
 
-        <div>
+        <div class="field">
             <label for="password"
                    th:text="#{label.member.password}">
                 비밀번호
@@ -46,15 +58,19 @@
 
             <input id="password"
                    type="password"
-                   th:field="*{password}">
+                   autocomplete="new-password"
+                   th:field="*{password}"
+                   th:classappend="${#fields.hasErrors('password')} ? 'is-invalid' : ''"
+                   th:attr="aria-invalid=${#fields.hasErrors('password')}">
 
-            <p th:if="${#fields.hasErrors('password')}"
+            <p class="field-error"
+               th:if="${#fields.hasErrors('password')}"
                th:errors="*{password}">
                 비밀번호 오류
             </p>
         </div>
 
-        <div>
+        <div class="field">
             <label for="passwordConfirm"
                    th:text="#{label.member.passwordConfirm}">
                 비밀번호 확인
@@ -62,15 +78,19 @@
 
             <input id="passwordConfirm"
                    type="password"
-                   th:field="*{passwordConfirm}">
+                   autocomplete="new-password"
+                   th:field="*{passwordConfirm}"
+                   th:classappend="${#fields.hasErrors('passwordConfirm')} ? 'is-invalid' : ''"
+                   th:attr="aria-invalid=${#fields.hasErrors('passwordConfirm')}">
 
-            <p th:if="${#fields.hasErrors('passwordConfirm')}"
+            <p class="field-error"
+               th:if="${#fields.hasErrors('passwordConfirm')}"
                th:errors="*{passwordConfirm}">
                 비밀번호 확인 오류
             </p>
         </div>
 
-        <div>
+        <div class="field">
             <label for="name"
                    th:text="#{label.member.name}">
                 이름
@@ -78,23 +98,27 @@
 
             <input id="name"
                    type="text"
-                   th:field="*{name}">
+                   autocomplete="name"
+                   th:field="*{name}"
+                   th:classappend="${#fields.hasErrors('name')} ? 'is-invalid' : ''"
+                   th:attr="aria-invalid=${#fields.hasErrors('name')}">
 
-            <p th:if="${#fields.hasErrors('name')}"
+            <p class="field-error"
+               th:if="${#fields.hasErrors('name')}"
                th:errors="*{name}">
                 이름 오류
             </p>
         </div>
 
-        <button type="submit"
-                th:text="#{button.member.create}">
-            회원가입
-        </button>
+        <div class="form-actions">
+            <a class="button button--secondary" th:href="@{/}" href="/"
+               th:text="#{link.home}">홈으로 돌아가기</a>
+            <button class="button button--primary" type="submit"
+                    th:text="#{button.member.create}">회원가입</button>
+        </div>
     </form>
-
-    <a href="/" th:text="#{link.home}">
-        홈으로 돌아가기
-    </a>
 </main>
+
+<footer th:replace="~{fragments/site :: footer}"></footer>
 </body>
 </html>

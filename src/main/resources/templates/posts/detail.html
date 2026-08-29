@@ -4,72 +4,92 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="#{title.post.detail(${post.title})}">게시글 상세 - Campus Book Market</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
 </head>
 <body>
-<header>
-    <a href="/">Campus Book Market</a>
-</header>
+<a class="skip-link" href="#main-content" th:text="#{aria.skip.content}">본문으로 건너뛰기</a>
+<header th:replace="~{fragments/site :: header}"></header>
 
-<main>
+<main id="main-content" class="page-shell page-shell--wide">
+    <a class="back-link" th:href="@{/posts}" href="/posts"
+       th:text="#{link.post.list}">목록으로 돌아가기</a>
+
     <article>
-        <h1 th:text="${post.title}">게시글 제목</h1>
+        <header class="detail-header">
+            <div class="detail-header__topline">
+                <span class="status-badge"
+                      th:classappend="${'status-badge--' + #strings.toLowerCase(post.status.name())}"
+                      th:text="#{${'tradeStatus.' + post.status.name()}}">판매 중</span>
+                <span class="result-count">Campus Book Market</span>
+            </div>
+            <h1 th:text="${post.title}">게시글 제목</h1>
+            <p class="detail-price" th:text="#{format.price(${post.price})}">0원</p>
+        </header>
 
-        <dl>
-            <div>
-                <dt th:text="#{label.post.price}">가격</dt>
-                <dd th:text="#{format.price(${post.price})}">0원</dd>
-            </div>
-            <div>
-                <dt th:text="#{label.post.sellerName}">판매자</dt>
-                <dd th:text="${post.sellerName}">판매자</dd>
-            </div>
-            <div>
-                <dt th:text="#{label.post.status}">거래 상태</dt>
-                <dd th:text="#{${'tradeStatus.' + post.status.name()}}">판매 중</dd>
-            </div>
-            <div>
-                <dt th:text="#{label.post.createdAt}">등록 시각</dt>
-                <dd th:text="${post.createdAt}">2026-08-11T10:00</dd>
-            </div>
-            <div>
-                <dt th:text="#{label.post.updatedAt}">수정 시각</dt>
-                <dd th:text="${post.updatedAt}">2026-08-11T10:00</dd>
-            </div>
-        </dl>
+        <div class="detail-layout">
+            <div class="detail-main">
+                <dl class="detail-meta">
+                    <div>
+                        <dt th:text="#{label.post.sellerName}">판매자</dt>
+                        <dd th:text="${post.sellerName}">판매자</dd>
+                    </div>
+                    <div>
+                        <dt th:text="#{label.post.status}">거래 상태</dt>
+                        <dd th:text="#{${'tradeStatus.' + post.status.name()}}">판매 중</dd>
+                    </div>
+                    <div>
+                        <dt th:text="#{label.post.createdAt}">등록 시각</dt>
+                        <dd th:text="${post.createdAt}">2026-08-11T10:00</dd>
+                    </div>
+                    <div>
+                        <dt th:text="#{label.post.updatedAt}">수정 시각</dt>
+                        <dd th:text="${post.updatedAt}">2026-08-11T10:00</dd>
+                    </div>
+                </dl>
 
-        <section>
-            <h2 th:text="#{section.post.description}">상품 설명</h2>
-            <p th:text="${post.description}">상품 설명</p>
-        </section>
+                <section class="detail-description">
+                    <h2 th:text="#{section.post.description}">상품 설명</h2>
+                    <p th:text="${post.description}">상품 설명</p>
+                </section>
+            </div>
 
-        <section>
-            <h2 th:text="#{section.post.statusChange}">거래 상태 변경</h2>
+            <aside class="detail-aside">
+                <h2 th:text="#{section.post.statusChange}">거래 상태 변경</h2>
 
-            <form th:action="@{/posts/{postId}/status(postId=${post.id})}"
-                  method="post">
-                <button type="submit" name="status" value="SALE"
-                        th:text="#{tradeStatus.SALE}">
-                    판매 중
-                </button>
-                <button type="submit" name="status" value="RESERVED"
-                        th:text="#{tradeStatus.RESERVED}">
-                    예약 중
-                </button>
-                <button type="submit" name="status" value="SOLD"
-                        th:text="#{tradeStatus.SOLD}">
-                    판매 완료
-                </button>
-            </form>
-        </section>
+                <form class="status-control"
+                      th:action="@{/posts/{postId}/status(postId=${post.id})}"
+                      method="post">
+                    <button type="submit" name="status" value="SALE"
+                            th:classappend="${post.status.name() == 'SALE'} ? 'is-active' : ''"
+                            th:disabled="${post.status.name() == 'SALE'}"
+                            th:text="#{tradeStatus.SALE}">판매 중</button>
+                    <button type="submit" name="status" value="RESERVED"
+                            th:classappend="${post.status.name() == 'RESERVED'} ? 'is-active' : ''"
+                            th:disabled="${post.status.name() == 'RESERVED'}"
+                            th:text="#{tradeStatus.RESERVED}">예약 중</button>
+                    <button type="submit" name="status" value="SOLD"
+                            th:classappend="${post.status.name() == 'SOLD'} ? 'is-active' : ''"
+                            th:disabled="${post.status.name() == 'SOLD'}"
+                            th:text="#{tradeStatus.SOLD}">판매 완료</button>
+                </form>
+            </aside>
+        </div>
 
     </article>
 
-    <a th:href="@{/posts/{postId}/edit(postId=${post.id})}"
-       th:text="#{link.post.edit}">수정</a>
-    <a href="/posts" th:text="#{link.post.list}">목록으로 돌아가기</a>
-    <form th:action="@{/posts/{postId}/delete(postId=${post.id})}" method="post">
-        <button type="submit" th:text="#{button.post.delete}">삭제</button>
-    </form>
+    <div class="detail-actions">
+        <a class="button button--primary"
+           th:href="@{/posts/{postId}/edit(postId=${post.id})}"
+           th:text="#{link.post.edit}">수정</a>
+        <a class="button button--secondary" th:href="@{/posts}" href="/posts"
+           th:text="#{link.post.list}">목록으로 돌아가기</a>
+        <form th:action="@{/posts/{postId}/delete(postId=${post.id})}" method="post">
+            <button class="button button--danger" type="submit"
+                    th:text="#{button.post.delete}">삭제</button>
+        </form>
+    </div>
 </main>
+
+<footer th:replace="~{fragments/site :: footer}"></footer>
 </body>
 </html>

@@ -4,18 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title th:text="#{title.post.list}">게시글 목록 - Campus Book Market</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
 </head>
 <body>
-<header>
-    <a href="/">Campus Book Market</a>
-</header>
+<a class="skip-link" href="#main-content" th:text="#{aria.skip.content}">본문으로 건너뛰기</a>
+<header th:replace="~{fragments/site :: header}"></header>
 
-<main>
-    <h1 th:text="#{page.post.list}">게시글 목록</h1>
-    <p><a href="/posts/new" th:text="#{link.post.create}">게시글 등록</a></p>
+<main id="main-content" class="page-shell page-shell--wide">
+    <div class="page-heading">
+        <div class="page-heading__copy">
+            <p class="eyebrow">Campus Marketplace</p>
+            <h1 th:text="#{page.post.list}">게시글 목록</h1>
+        </div>
+        <a class="button button--primary" th:href="@{/posts/new}" href="/posts/new"
+           th:text="#{link.post.create}">게시글 등록</a>
+    </div>
 
-    <form th:action="@{/posts}" method="get">
-        <div>
+    <form class="search-panel" th:action="@{/posts}" method="get"
+          role="search" th:attr="aria-label=#{aria.search.posts}">
+        <div class="search-grid">
+            <div class="field">
             <label for="searchType" th:text="#{label.search.type}">검색 기준</label>
             <select id="searchType" name="searchType">
                 <option th:each="searchType : ${searchTypes}"
@@ -25,15 +33,17 @@
                     제목
                 </option>
             </select>
+            </div>
 
+            <div class="field">
             <label for="keyword" th:text="#{label.search.keyword}">검색어</label>
             <input id="keyword" name="keyword" type="search"
                    th:value="${keyword}"
                    th:placeholder="#{placeholder.search.keyword}"
                    placeholder="검색어를 입력하세요">
-        </div>
+            </div>
 
-        <div>
+            <div class="field">
             <label for="status" th:text="#{label.search.status}">거래 상태</label>
             <select id="status" name="status">
                 <option value="" th:text="#{option.status.all}">전체 상태</option>
@@ -44,9 +54,9 @@
                     판매 중
                 </option>
             </select>
-        </div>
+            </div>
 
-        <div>
+            <div class="field">
             <label for="sort" th:text="#{label.search.sort}">정렬</label>
             <select id="sort" name="sort">
                 <option th:each="sortOption : ${sortOptions}"
@@ -56,56 +66,81 @@
                     최신순
                 </option>
             </select>
+            </div>
         </div>
 
-        <button type="submit" th:text="#{button.search}">검색</button>
-        <a th:if="${!#strings.isEmpty(keyword)
-                    or selectedSearchType.name() != 'TITLE'
-                    or selectedStatus != null
-                    or selectedSort.name() != 'LATEST'}"
-           th:href="@{/posts}"
-           th:text="#{link.search.reset}">초기화</a>
+        <div class="search-actions">
+            <a class="button button--secondary button--compact"
+               th:if="${!#strings.isEmpty(keyword)
+                        or selectedSearchType.name() != 'TITLE'
+                        or selectedStatus != null
+                        or selectedSort.name() != 'LATEST'}"
+               th:href="@{/posts}"
+               th:text="#{link.search.reset}">초기화</a>
+            <button class="button button--primary button--compact" type="submit"
+                    th:text="#{button.search}">검색</button>
+        </div>
     </form>
 
-    <p th:if="${#lists.isEmpty(posts) and #strings.isEmpty(keyword) and selectedStatus == null}"
-       th:text="#{empty.posts.default}">
-        아직 등록된 게시글이 없습니다.
-    </p>
-    <p th:if="${#lists.isEmpty(posts) and (!#strings.isEmpty(keyword) or selectedStatus != null)}"
-       th:text="#{empty.posts.filtered}">
-        조건에 맞는 게시글이 없습니다.
-    </p>
+    <div class="results-heading">
+        <h2 th:text="#{page.post.list}">게시글 목록</h2>
+        <span class="result-count"
+              th:text="#{result.post.count(${postPage.totalElements})}">총 0개</span>
+    </div>
 
-    <ul th:unless="${#lists.isEmpty(posts)}">
-        <li th:each="post : ${posts}">
-            <a th:href="@{/posts/{postId}(postId=${post.id})}" th:text="${post.title}">게시글 제목</a>
-            <span th:text="#{format.price(${post.price})}">0원</span>
-            <span th:text="${post.sellerName}">판매자</span>
-            <span th:text="#{${'tradeStatus.' + post.status.name()}}">판매 중</span>
+    <div class="empty-state"
+         th:if="${#lists.isEmpty(posts) and #strings.isEmpty(keyword) and selectedStatus == null}">
+        <p th:text="#{empty.posts.default}">아직 등록된 게시글이 없습니다.</p>
+    </div>
+    <div class="empty-state"
+         th:if="${#lists.isEmpty(posts) and (!#strings.isEmpty(keyword) or selectedStatus != null)}">
+        <p th:text="#{empty.posts.filtered}">조건에 맞는 게시글이 없습니다.</p>
+    </div>
+
+    <ul class="post-list" th:unless="${#lists.isEmpty(posts)}">
+        <li class="post-row" th:each="post : ${posts}">
+            <div class="post-row__main">
+                <div class="post-row__meta">
+                    <span class="status-badge"
+                          th:classappend="${'status-badge--' + #strings.toLowerCase(post.status.name())}"
+                          th:text="#{${'tradeStatus.' + post.status.name()}}">판매 중</span>
+                </div>
+                <a class="post-row__title"
+                   th:href="@{/posts/{postId}(postId=${post.id})}"
+                   th:text="${post.title}">게시글 제목</a>
+                <p class="post-row__seller">
+                    <span th:text="#{label.post.sellerName}">판매자</span>
+                    <span aria-hidden="true"> · </span>
+                    <span th:text="${post.sellerName}">판매자 이름</span>
+                </p>
+            </div>
+            <strong class="post-row__price" th:text="#{format.price(${post.price})}">0원</strong>
         </li>
     </ul>
 
-    <nav th:if="${postPage.totalPages > 0}"
+    <nav class="pagination" th:if="${postPage.totalPages > 0}"
          aria-label="게시글 페이지"
          th:attr="aria-label=#{aria.posts.pagination}">
-        <a th:unless="${postPage.first}"
+        <a class="pagination__direction" th:unless="${postPage.first}"
            th:href="@{/posts(keyword=${keyword}, searchType=${selectedSearchType}, status=${selectedStatus}, sort=${selectedSort}, page=${postPage.previousPage})}">
             <span th:text="#{pagination.previous}">이전</span>
         </a>
 
-        <span th:each="pageNumber : ${postPage.pageNumbers}">
+        <th:block th:each="pageNumber : ${postPage.pageNumbers}">
             <strong th:if="${pageNumber == postPage.currentPage}"
                     th:text="${pageNumber}">1</strong>
             <a th:unless="${pageNumber == postPage.currentPage}"
                th:href="@{/posts(keyword=${keyword}, searchType=${selectedSearchType}, status=${selectedStatus}, sort=${selectedSort}, page=${pageNumber})}"
                th:text="${pageNumber}">1</a>
-        </span>
+        </th:block>
 
-        <a th:unless="${postPage.last}"
+        <a class="pagination__direction" th:unless="${postPage.last}"
            th:href="@{/posts(keyword=${keyword}, searchType=${selectedSearchType}, status=${selectedStatus}, sort=${selectedSort}, page=${postPage.nextPage})}">
             <span th:text="#{pagination.next}">다음</span>
         </a>
     </nav>
 </main>
+
+<footer th:replace="~{fragments/site :: footer}"></footer>
 </body>
 </html>

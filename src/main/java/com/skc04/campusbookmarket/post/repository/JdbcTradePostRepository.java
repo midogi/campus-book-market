@@ -1,5 +1,6 @@
 package com.skc04.campusbookmarket.post.repository;
 
+import com.skc04.campusbookmarket.member.domain.Member;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
@@ -27,6 +28,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
     private static final RowMapper<TradePost> TRADE_POST_ROW_MAPPER =
             (resultSet, rowNumber) -> new TradePost(
                     resultSet.getLong("id"),
+                    resultSet.getObject("member_id", Long.class),
                     resultSet.getString("title"),
                     resultSet.getLong("price"),
                     resultSet.getString("seller_name"),
@@ -45,7 +47,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
     @Override
     public List<TradePost> findAll() {
         String sql = """
-                SELECT id, title, price, seller_name, description, status, created_at, updated_at
+                SELECT id, member_id, title, price, seller_name, description, status, created_at, updated_at
                 FROM trade_post
                 ORDER BY id
                 """;
@@ -125,7 +127,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
             Integer offset
     ) {
         StringBuilder sql = new StringBuilder("""
-                SELECT id, title, price, seller_name, description, status, created_at, updated_at
+                SELECT id, member_id, title, price, seller_name, description, status, created_at, updated_at
                 FROM trade_post
                 WHERE 1 = 1
                 """);
@@ -187,7 +189,7 @@ public class JdbcTradePostRepository implements TradePostRepository {
     @Override
     public Optional<TradePost> findById(Long id) {
         String sql = """
-                SELECT id, title, price, seller_name, description, status, created_at, updated_at
+                SELECT id, member_id, title, price, seller_name, description, status, created_at, updated_at
                 FROM trade_post
                 WHERE id = ?
                 """;
@@ -197,6 +199,35 @@ public class JdbcTradePostRepository implements TradePostRepository {
     }
 
     @Override
+    public TradePost save(String title, long price, Member seller, String description) {
+        String sql = """
+                INSERT INTO trade_post (member_id, title, price, seller_name, description)
+                VALUES (?, ?, ?, ?, ?)
+                """;
+
+        KeyHolder keyHolder = new GeneratedKeyHolder();
+
+        // INSERT 후 DB가 생성한 identity 값을 KeyHolder로 돌려받는다.
+        jdbcTemplate.update(connection -> {
+            PreparedStatement statement = connection.prepareStatement(sql, new String[]{"id"});
+            statement.setLong(1, seller.getId());
+            statement.setString(2, title);
+            statement.setLong(3, price);
+            statement.setString(4, seller.getName());
+            statement.setString(5, description);
+            return statement;
+        }, keyHolder);
+
+        Number generatedId = keyHolder.getKey();
+        if (generatedId == null) {
+            throw new IllegalStateException("게시글 ID를 생성하지 못했습니다.");
+        }
+
+        return findById(generatedId.longValue())
+                .orElseThrow(() -> new IllegalStateException("저장한 게시글을 조회하지 못했습니다."));
+    }
+
+    /** JDBC 자체 학습 테스트에서 회원 기능과 분리해 게시글을 만들기 위한 호환 메서드다. */
     public TradePost save(String title, long price, String sellerName, String description) {
         String sql = """
                 INSERT INTO trade_post (title, price, seller_name, description)
@@ -204,8 +235,6 @@ public class JdbcTradePostRepository implements TradePostRepository {
                 """;
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
-
-        // INSERT 후 DB가 생성한 identity 값을 KeyHolder로 돌려받는다.
         jdbcTemplate.update(connection -> {
             PreparedStatement statement = connection.prepareStatement(sql, new String[]{"id"});
             statement.setString(1, title);
@@ -219,7 +248,6 @@ public class JdbcTradePostRepository implements TradePostRepository {
         if (generatedId == null) {
             throw new IllegalStateException("게시글 ID를 생성하지 못했습니다.");
         }
-
         return findById(generatedId.longValue())
                 .orElseThrow(() -> new IllegalStateException("저장한 게시글을 조회하지 못했습니다."));
     }
@@ -229,12 +257,11 @@ public class JdbcTradePostRepository implements TradePostRepository {
             Long id,
             String title,
             long price,
-            String sellerName,
             String description
     ) {
         String sql = """
                 UPDATE trade_post
-                SET title = ?, price = ?, seller_name = ?, description = ?, updated_at = CURRENT_TIMESTAMP
+                SET title = ?, price = ?, description = ?, updated_at = CURRENT_TIMESTAMP
                 WHERE id = ?
                 """;
 
@@ -242,7 +269,6 @@ public class JdbcTradePostRepository implements TradePostRepository {
                 sql,
                 title,
                 price,
-                sellerName,
                 description,
                 id
         );

@@ -3,6 +3,7 @@ package com.skc04.campusbookmarket.post.repository;
 import com.querydsl.core.types.OrderSpecifier;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.skc04.campusbookmarket.member.domain.Member;
 import com.skc04.campusbookmarket.post.domain.QTradePost;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
@@ -127,11 +128,23 @@ public class JpaTradePostRepository implements TradePostRepository {
     public TradePost save(
             String title,
             long price,
+            Member seller,
+            String description
+    ) {
+        TradePost post = new TradePost(title, price, seller, description);
+        return springDataRepository.save(post);
+    }
+
+    /** 저장 기술 비교용 기존 저장소 테스트를 유지하기 위한 호환 메서드다. */
+    public TradePost save(
+            String title,
+            long price,
             String sellerName,
             String description
     ) {
-        TradePost post = new TradePost(title, price, sellerName, description);
-        return springDataRepository.save(post);
+        return springDataRepository.save(
+                new TradePost(title, price, sellerName, description)
+        );
     }
 
     @Override
@@ -139,7 +152,6 @@ public class JpaTradePostRepository implements TradePostRepository {
             Long id,
             String title,
             long price,
-            String sellerName,
             String description
     ) {
         Optional<TradePost> foundPost = springDataRepository.findById(id);
@@ -147,7 +159,7 @@ public class JpaTradePostRepository implements TradePostRepository {
             return Optional.empty();
         }
         TradePost post = foundPost.get();
-        post.updateDetails(title, price, sellerName, description);
+        post.updateDetails(title, price, description);
 
         return Optional.of(post);
     }

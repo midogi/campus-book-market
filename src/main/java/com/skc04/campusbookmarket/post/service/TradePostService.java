@@ -1,5 +1,6 @@
 package com.skc04.campusbookmarket.post.service;
 
+import com.skc04.campusbookmarket.member.domain.Member;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
@@ -87,30 +88,59 @@ public class TradePostService {
         return tradePostRepository.findById(postId);
     }
 
+    /** 수정 화면을 열기 전에도 작성자 권한을 검사한다. */
+    public Optional<TradePost> findOwnedById(Long postId, Long memberId) {
+        Optional<TradePost> foundPost = tradePostRepository.findById(postId);
+        foundPost.ifPresent(post -> validateOwner(post, memberId));
+        return foundPost;
+    }
+
     @Transactional
-    public TradePost create(String title, long price, String sellerName, String description) {
-        return tradePostRepository.save(title, price, sellerName, description);
+    public TradePost create(String title, long price, Member seller, String description) {
+        return tradePostRepository.save(title, price, seller, description);
     }
 
     @Transactional
     public Optional<TradePost> update(
             Long postId,
+            Long memberId,
             String title,
             long price,
-            String sellerName,
             String description
     ) {
-        return tradePostRepository.update(postId, title, price, sellerName, description);
+        Optional<TradePost> foundPost = findOwnedById(postId, memberId);
+        if (foundPost.isEmpty()) {
+            return Optional.empty();
+        }
+        return tradePostRepository.update(postId, title, price, description);
     }
 
     @Transactional
-    public Optional<TradePost> updateStatus(Long postId, TradeStatus status) {
+    public Optional<TradePost> updateStatus(
+            Long postId,
+            Long memberId,
+            TradeStatus status
+    ) {
+        Optional<TradePost> foundPost = findOwnedById(postId, memberId);
+        if (foundPost.isEmpty()) {
+            return Optional.empty();
+        }
         return tradePostRepository.updateStatus(postId, status);
     }
 
     @Transactional
-    public boolean delete(Long postId) {
+    public boolean delete(Long postId, Long memberId) {
+        Optional<TradePost> foundPost = findOwnedById(postId, memberId);
+        if (foundPost.isEmpty()) {
+            return false;
+        }
         return tradePostRepository.deleteById(postId);
+    }
+
+    private void validateOwner(TradePost post, Long memberId) {
+        if (!post.isWrittenBy(memberId)) {
+            throw new PostAccessDeniedException();
+        }
     }
 
     private String normalizeKeyword(String keyword) {

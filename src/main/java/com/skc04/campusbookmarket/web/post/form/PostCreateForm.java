@@ -19,11 +19,6 @@ public class PostCreateForm {
     @PositiveOrZero(message = "{validation.post.price.positiveOrZero}")
     private Long price;
 
-
-    @NotBlank(message = "{validation.post.sellerName.required}")
-    @Size(max = 30, message = "{validation.post.sellerName.size}")
-    private String sellerName;
-
     @NotBlank(message = "{validation.post.description.required}")
     @Size(max = 1000, message = "{validation.post.description.size}")
     private String description;
@@ -42,14 +37,6 @@ public class PostCreateForm {
 
     public void setPrice(Long price) {
         this.price = price;
-    }
-
-    public String getSellerName() {
-        return sellerName;
-    }
-
-    public void setSellerName(String sellerName) {
-        this.sellerName = sellerName;
     }
 
     public String getDescription() {

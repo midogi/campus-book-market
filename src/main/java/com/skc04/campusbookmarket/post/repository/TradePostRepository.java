@@ -1,5 +1,6 @@
 package com.skc04.campusbookmarket.post.repository;
 
+import com.skc04.campusbookmarket.member.domain.Member;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
@@ -45,14 +46,13 @@ public interface TradePostRepository {
     Optional<TradePost> findById(Long id);
 
     /** 새 게시글을 저장하고 DB에서 생성된 ID가 반영된 엔티티를 반환한다. */
-    TradePost save(String title, long price, String sellerName, String description);
+    TradePost save(String title, long price, Member seller, String description);
 
     /** 게시글 내용을 수정하며, 대상이 없으면 빈 Optional을 반환한다. */
     Optional<TradePost> update(
             Long id,
             String title,
             long price,
-            String sellerName,
             String description
     );
 

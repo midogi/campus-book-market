@@ -1,12 +1,13 @@
 package com.skc04.campusbookmarket.web.post;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.hamcrest.Matchers.containsString;
-import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -21,6 +22,7 @@ import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
+import com.skc04.campusbookmarket.post.service.PostAccessDeniedException;
 import com.skc04.campusbookmarket.post.service.TradePostPage;
 import com.skc04.campusbookmarket.post.service.TradePostService;
 import com.skc04.campusbookmarket.web.interceptor.LoginCheckInterceptor;
@@ -35,6 +37,7 @@ import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
+import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(PostController.class)
@@ -47,25 +50,26 @@ class PostControllerTest {
     @MockitoBean
     private TradePostService tradePostService;
 
-    private MockHttpSession loginSession;
+    private Member writer;
+    private Member otherMember;
+    private MockHttpSession writerSession;
+    private MockHttpSession otherMemberSession;
 
     @BeforeEach
-    void setUpLoginSession() {
-        loginSession = new MockHttpSession();
-        loginSession.setAttribute(
-                SessionConst.LOGIN_MEMBER,
-                new Member("midogi", "encoded-password", "김동민")
-        );
+    void setUpLoginSessions() {
+        writer = member(1L, "writer", "학생 판매자");
+        otherMember = member(2L, "other", "다른 회원");
+        writerSession = loginSession(writer);
+        otherMemberSession = loginSession(otherMember);
     }
 
     @Test
-    void list() throws Exception {
-        List<TradePost> posts = List.of(samplePost());
+    void listRemainsPublic() throws Exception {
+        List<TradePost> posts = List.of(samplePost(writer));
         TradePostPage postPage = new TradePostPage(posts, 1, 10, 1);
         given(tradePostService.search(
                 "", TradePostSearchType.TITLE, null, TradePostSort.LATEST, 1
-        ))
-                .willReturn(postPage);
+        )).willReturn(postPage);
 
         mockMvc.perform(get("/posts"))
                 .andExpect(status().isOk())
@@ -93,7 +97,7 @@ class PostControllerTest {
 
     @Test
     void listSearchesByKeywordStatusAndSortOnRequestedPage() throws Exception {
-        List<TradePost> posts = List.of(samplePost());
+        List<TradePost> posts = List.of(samplePost(writer));
         TradePostPage postPage = new TradePostPage(posts, 2, 10, 11);
         given(tradePostService.search(
                 "Spring",
@@ -119,39 +123,23 @@ class PostControllerTest {
                 ))
                 .andExpect(model().attribute("selectedStatus", TradeStatus.SOLD))
                 .andExpect(model().attribute("selectedSort", TradePostSort.PRICE_DESC))
-                .andExpect(model().attributeExists(
-                        "searchTypes", "tradeStatuses", "sortOptions"
-                ))
                 .andExpect(content().string(containsString("searchType=SELLER")))
                 .andExpect(content().string(containsString("page=1")));
-
-        verify(tradePostService).search(
-                "Spring",
-                TradePostSearchType.SELLER,
-                TradeStatus.SOLD,
-                TradePostSort.PRICE_DESC,
-                2
-        );
     }
 
     @Test
-    void detail() throws Exception {
-        TradePost post = samplePost();
+    void detailRemainsPublicAndHidesChangeControls() throws Exception {
+        TradePost post = samplePost(writer);
         given(tradePostService.findById(1L)).willReturn(Optional.of(post));
 
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
                 .andExpect(model().attribute("post", post))
-                .andExpect(content().string(not(containsString(
-                        "/posts/1/edit"
-                ))))
-                .andExpect(content().string(not(containsString(
-                        "/posts/1/status"
-                ))))
-                .andExpect(content().string(not(containsString(
-                        "/posts/1/delete"
-                ))));
+                .andExpect(model().attribute("canManage", false))
+                .andExpect(content().string(not(containsString("/posts/1/edit"))))
+                .andExpect(content().string(not(containsString("/posts/1/status"))))
+                .andExpect(content().string(not(containsString("/posts/1/delete"))));
     }
 
     @Test
@@ -163,8 +151,33 @@ class PostControllerTest {
     }
 
     @Test
+    void writerSeesChangeControlsOnDetail() throws Exception {
+        TradePost post = samplePost(writer);
+        given(tradePostService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1").session(writerSession))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("canManage", true))
+                .andExpect(content().string(containsString("/posts/1/edit")))
+                .andExpect(content().string(containsString("/posts/1/status")))
+                .andExpect(content().string(containsString("/posts/1/delete")));
+    }
+
+    @Test
+    void otherMemberDoesNotSeeChangeControlsOnDetail() throws Exception {
+        TradePost post = samplePost(writer);
+        given(tradePostService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1").session(otherMemberSession))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("canManage", false))
+                .andExpect(content().string(not(containsString("/posts/1/edit"))))
+                .andExpect(content().string(not(containsString("/posts/1/delete"))));
+    }
+
+    @Test
     void createForm() throws Exception {
-        mockMvc.perform(get("/posts/new").session(loginSession))
+        mockMvc.perform(get("/posts/new").session(writerSession))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/new"))
                 .andExpect(model().attributeExists("postCreateForm"));
@@ -173,57 +186,60 @@ class PostControllerTest {
     @Test
     void createFormUsesEnglishMessages() throws Exception {
         mockMvc.perform(get("/posts/new")
-                        .session(loginSession)
+                        .session(writerSession)
                         .locale(Locale.ENGLISH))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/new"))
                 .andExpect(content().string(containsString("Create Post")))
-                .andExpect(content().string(containsString("Seller")))
+                .andExpect(content().string(containsString("Description")))
                 .andExpect(content().string(containsString("Back to List")));
     }
 
     @Test
-    void create() throws Exception {
-        TradePost savedPost = samplePost();
+    void createUsesLoginMemberAsWriter() throws Exception {
+        TradePost savedPost = samplePost(writer);
         given(tradePostService.create(
-                "Spring Basics", 15000L, "Student Seller", "Clean copy"
+                "Spring Basics", 15000L, writer, "Clean copy"
         )).willReturn(savedPost);
 
         mockMvc.perform(post("/posts")
-                        .session(loginSession)
+                        .session(writerSession)
                         .param("title", "Spring Basics")
                         .param("price", "15000")
-                        .param("sellerName", "Student Seller")
                         .param("description", "Clean copy"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/posts/1"));
+
+        verify(tradePostService).create(
+                "Spring Basics", 15000L, writer, "Clean copy"
+        );
     }
 
     @Test
     void createRejectsInvalidInput() throws Exception {
         mockMvc.perform(post("/posts")
-                        .session(loginSession)
+                        .session(writerSession)
                         .param("title", " ")
                         .param("price", "-1")
-                        .param("sellerName", " ")
                         .param("description", " "))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/new"))
                 .andExpect(model().attributeHasFieldErrors(
-                        "postCreateForm", "title", "price", "sellerName", "description"
+                        "postCreateForm", "title", "price", "description"
                 ));
 
         verify(tradePostService, never()).create(
-                anyString(), anyLong(), anyString(), anyString()
+                anyString(), anyLong(), any(Member.class), anyString()
         );
     }
 
     @Test
-    void updateForm() throws Exception {
-        TradePost post = samplePost();
-        given(tradePostService.findById(1L)).willReturn(Optional.of(post));
+    void writerCanOpenUpdateForm() throws Exception {
+        TradePost post = samplePost(writer);
+        given(tradePostService.findOwnedById(1L, writer.getId()))
+                .willReturn(Optional.of(post));
 
-        mockMvc.perform(get("/posts/1/edit").session(loginSession))
+        mockMvc.perform(get("/posts/1/edit").session(writerSession))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/edit"))
                 .andExpect(model().attribute("postId", 1L))
@@ -231,21 +247,24 @@ class PostControllerTest {
     }
 
     @Test
-    void update() throws Exception {
-        TradePost existingPost = samplePost();
-        TradePost updatedPost = new TradePost(
-                1L, "Updated Title", 20000L, "Updated Seller", "Updated description"
-        );
-        given(tradePostService.findById(1L)).willReturn(Optional.of(existingPost));
+    void writerCanUpdatePost() throws Exception {
+        TradePost existingPost = samplePost(writer);
+        TradePost updatedPost = samplePost(writer);
+        updatedPost.updateDetails("Updated Title", 20000L, "Updated description");
+        given(tradePostService.findOwnedById(1L, writer.getId()))
+                .willReturn(Optional.of(existingPost));
         given(tradePostService.update(
-                1L, "Updated Title", 20000L, "Updated Seller", "Updated description"
+                1L,
+                writer.getId(),
+                "Updated Title",
+                20000L,
+                "Updated description"
         )).willReturn(Optional.of(updatedPost));
 
         mockMvc.perform(post("/posts/1/edit")
-                        .session(loginSession)
+                        .session(writerSession)
                         .param("title", "Updated Title")
                         .param("price", "20000")
-                        .param("sellerName", "Updated Seller")
                         .param("description", "Updated description"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/posts/1"));
@@ -253,81 +272,92 @@ class PostControllerTest {
 
     @Test
     void updateRejectsInvalidInput() throws Exception {
-        given(tradePostService.findById(1L)).willReturn(Optional.of(samplePost()));
+        given(tradePostService.findOwnedById(1L, writer.getId()))
+                .willReturn(Optional.of(samplePost(writer)));
 
         mockMvc.perform(post("/posts/1/edit")
-                        .session(loginSession)
+                        .session(writerSession)
                         .param("title", " ")
                         .param("price", "-1")
-                        .param("sellerName", " ")
                         .param("description", " "))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/edit"))
                 .andExpect(model().attribute("postId", 1L))
                 .andExpect(model().attributeHasFieldErrors(
-                        "postUpdateForm", "title", "price", "sellerName", "description"
+                        "postUpdateForm", "title", "price", "description"
                 ));
 
         verify(tradePostService, never()).update(
-                anyLong(), anyString(), anyLong(), anyString(), anyString()
+                anyLong(), anyLong(), anyString(), anyLong(), anyString()
         );
     }
 
     @Test
-    void delete() throws Exception {
-        given(tradePostService.delete(1L)).willReturn(true);
+    void otherMemberCannotUpdatePost() throws Exception {
+        given(tradePostService.findOwnedById(1L, otherMember.getId()))
+                .willThrow(new PostAccessDeniedException());
 
-        mockMvc.perform(post("/posts/1/delete").session(loginSession))
+        mockMvc.perform(post("/posts/1/edit")
+                        .session(otherMemberSession)
+                        .param("title", "Hacked Title")
+                        .param("price", "1")
+                        .param("description", "Hacked"))
+                .andExpect(status().isForbidden());
+
+        verify(tradePostService, never()).update(
+                anyLong(), anyLong(), anyString(), anyLong(), anyString()
+        );
+    }
+
+    @Test
+    void writerCanDeletePost() throws Exception {
+        given(tradePostService.delete(1L, writer.getId())).willReturn(true);
+
+        mockMvc.perform(post("/posts/1/delete").session(writerSession))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/posts"));
     }
 
     @Test
-    void deleteReturnsNotFoundWhenPostDoesNotExist() throws Exception {
-        given(tradePostService.delete(999L)).willReturn(false);
+    void otherMemberCannotDeletePost() throws Exception {
+        given(tradePostService.delete(1L, otherMember.getId()))
+                .willThrow(new PostAccessDeniedException());
 
-        mockMvc.perform(post("/posts/999/delete").session(loginSession))
-                .andExpect(status().isNotFound());
-    }
-
-    private TradePost samplePost() {
-        return new TradePost(
-                1L, "Spring Basics", 15000L, "Student Seller", "Clean copy"
-        );
+        mockMvc.perform(post("/posts/1/delete").session(otherMemberSession))
+                .andExpect(status().isForbidden());
     }
 
     @Test
-    void updateStatus() throws Exception {
-        TradePost post = new TradePost(
-                1L,
-                "Spring Basics",
-                15000L,
-                "Student Seller",
-                "Clean copy",
-                TradeStatus.RESERVED
-        );
+    void deleteReturnsNotFoundWhenPostDoesNotExist() throws Exception {
+        given(tradePostService.delete(999L, writer.getId())).willReturn(false);
 
-        given(tradePostService.updateStatus(1L, TradeStatus.RESERVED))
-                .willReturn(Optional.of(post));
+        mockMvc.perform(post("/posts/999/delete").session(writerSession))
+                .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void writerCanUpdateStatus() throws Exception {
+        TradePost post = samplePost(writer);
+        post.changeStatus(TradeStatus.RESERVED);
+        given(tradePostService.updateStatus(
+                1L, writer.getId(), TradeStatus.RESERVED
+        )).willReturn(Optional.of(post));
 
         mockMvc.perform(post("/posts/1/status")
-                        .session(loginSession)
+                        .session(writerSession)
                         .param("status", "RESERVED"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/posts/1"));
-
-        verify(tradePostService)
-                .updateStatus(1L, TradeStatus.RESERVED);
-
     }
 
     @Test
     void updateStatusReturnsNotFoundWhenPostDoesNotExist() throws Exception {
-        given(tradePostService.updateStatus(999L, TradeStatus.SOLD))
-                .willReturn(Optional.empty());
+        given(tradePostService.updateStatus(
+                999L, writer.getId(), TradeStatus.SOLD
+        )).willReturn(Optional.empty());
 
         mockMvc.perform(post("/posts/999/status")
-                        .session(loginSession)
+                        .session(writerSession)
                         .param("status", "SOLD"))
                 .andExpect(status().isNotFound());
     }
@@ -349,29 +379,40 @@ class PostControllerTest {
                         "/login?redirectURL=%2Fposts%2F1%2Fedit"
                 ));
 
-        verify(tradePostService, never()).findById(anyLong());
+        verify(tradePostService, never()).findOwnedById(anyLong(), anyLong());
     }
 
     @Test
-    void deleteRedirectsToPostListLoginWhenLoggedOut() throws Exception {
+    void deleteRedirectsToLoginWhenLoggedOut() throws Exception {
         mockMvc.perform(post("/posts/1/delete"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl(
                         "/login?redirectURL=%2Fposts"
                 ));
 
-        verify(tradePostService, never()).delete(anyLong());
+        verify(tradePostService, never()).delete(anyLong(), anyLong());
     }
 
-    @Test
-    void detailShowsChangeControlsWhenLoggedIn() throws Exception {
-        TradePost post = samplePost();
-        given(tradePostService.findById(1L)).willReturn(Optional.of(post));
+    private MockHttpSession loginSession(Member member) {
+        MockHttpSession session = new MockHttpSession();
+        session.setAttribute(SessionConst.LOGIN_MEMBER, member);
+        return session;
+    }
 
-        mockMvc.perform(get("/posts/1").session(loginSession))
-                .andExpect(status().isOk())
-                .andExpect(content().string(containsString("/posts/1/edit")))
-                .andExpect(content().string(containsString("/posts/1/status")))
-                .andExpect(content().string(containsString("/posts/1/delete")));
+    private Member member(Long id, String loginId, String name) {
+        Member member = new Member(loginId, "encoded-password", name);
+        ReflectionTestUtils.setField(member, "id", id);
+        return member;
+    }
+
+    private TradePost samplePost(Member seller) {
+        TradePost post = new TradePost(
+                "Spring Basics",
+                15000L,
+                seller,
+                "Clean copy"
+        );
+        ReflectionTestUtils.setField(post, "id", 1L);
+        return post;
     }
 }

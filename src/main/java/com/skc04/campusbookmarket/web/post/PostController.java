@@ -1,5 +1,6 @@
 package com.skc04.campusbookmarket.web.post;
 
+import com.skc04.campusbookmarket.member.domain.Member;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
@@ -9,6 +10,7 @@ import com.skc04.campusbookmarket.post.service.TradePostService;
 import com.skc04.campusbookmarket.web.interceptor.LoginRequired;
 import com.skc04.campusbookmarket.web.post.form.PostCreateForm;
 import com.skc04.campusbookmarket.web.post.form.PostUpdateForm;
+import com.skc04.campusbookmarket.web.session.SessionConst;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
@@ -20,6 +22,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.SessionAttribute;
 import org.springframework.web.server.ResponseStatusException;
 
 /** 거래 게시글의 목록·등록·조회·수정·삭제 화면 요청을 처리한다. */
@@ -74,7 +77,8 @@ public class PostController {
     @PostMapping
     public String create(
             @Valid @ModelAttribute("postCreateForm") PostCreateForm form,
-            BindingResult bindingResult
+            BindingResult bindingResult,
+            @SessionAttribute(SessionConst.LOGIN_MEMBER) Member loginMember
     ) {
         // 검증 실패 시 새 요청을 만들지 않아야 입력값과 오류 정보가 그대로 유지된다.
         if (bindingResult.hasErrors()) {
@@ -84,7 +88,7 @@ public class PostController {
         TradePost savedPost = tradePostService.create(
                 form.getTitle(),
                 form.getPrice(),
-                form.getSellerName(),
+                loginMember,
                 form.getDescription()
         );
 
@@ -94,13 +98,16 @@ public class PostController {
 
     @LoginRequired
     @GetMapping("/{postId}/edit")
-    public String updateForm(@PathVariable Long postId, Model model) {
-        TradePost post = findPostById(postId);
+    public String updateForm(
+            @PathVariable Long postId,
+            @SessionAttribute(SessionConst.LOGIN_MEMBER) Member loginMember,
+            Model model
+    ) {
+        TradePost post = findOwnedPostById(postId, loginMember.getId());
 
         PostUpdateForm form = new PostUpdateForm();
         form.setTitle(post.getTitle());
         form.setPrice(post.getPrice());
-        form.setSellerName(post.getSellerName());
         form.setDescription(post.getDescription());
 
         model.addAttribute("postId", postId);
@@ -114,10 +121,11 @@ public class PostController {
             @PathVariable Long postId,
             @Valid @ModelAttribute("postUpdateForm") PostUpdateForm form,
             BindingResult bindingResult,
+            @SessionAttribute(SessionConst.LOGIN_MEMBER) Member loginMember,
             Model model
     ) {
-        // 존재하지 않는 게시글의 수정 화면 요청은 먼저 404로 처리한다.
-        findPostById(postId);
+        // 입력 오류가 있더라도 다른 회원의 수정 화면을 보여 주지 않도록 권한을 먼저 확인한다.
+        findOwnedPostById(postId, loginMember.getId());
 
         if (bindingResult.hasErrors()) {
             model.addAttribute("postId", postId);
@@ -126,9 +134,9 @@ public class PostController {
 
         TradePost updatedPost = tradePostService.update(
                         postId,
+                        loginMember.getId(),
                         form.getTitle(),
                         form.getPrice(),
-                        form.getSellerName(),
                         form.getDescription()
                 )
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
@@ -139,16 +147,27 @@ public class PostController {
 
     @LoginRequired
     @PostMapping("/{postId}/status")
-    public String updateStatus(@PathVariable Long postId, @RequestParam TradeStatus status) {
-        TradePost updatedPost = tradePostService.updateStatus(postId, status)
+    public String updateStatus(
+            @PathVariable Long postId,
+            @RequestParam TradeStatus status,
+            @SessionAttribute(SessionConst.LOGIN_MEMBER) Member loginMember
+    ) {
+        TradePost updatedPost = tradePostService.updateStatus(
+                        postId,
+                        loginMember.getId(),
+                        status
+                )
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
         return "redirect:/posts/" + updatedPost.getId();
     }
 
     @LoginRequired
     @PostMapping("/{postId}/delete")
-    public String delete(@PathVariable Long postId) {
-        boolean deleted = tradePostService.delete(postId);
+    public String delete(
+            @PathVariable Long postId,
+            @SessionAttribute(SessionConst.LOGIN_MEMBER) Member loginMember
+    ) {
+        boolean deleted = tradePostService.delete(postId, loginMember.getId());
 
         if (!deleted) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND);
@@ -158,16 +177,33 @@ public class PostController {
     }
 
     @GetMapping("/{postId}")
-    public String detail(@PathVariable Long postId, Model model) {
+    public String detail(
+            @PathVariable Long postId,
+            @SessionAttribute(
+                    name = SessionConst.LOGIN_MEMBER,
+                    required = false
+            )
+            Member loginMember,
+            Model model
+    ) {
         TradePost post = findPostById(postId);
 
         model.addAttribute("post", post);
+        model.addAttribute(
+                "canManage",
+                loginMember != null && post.isWrittenBy(loginMember.getId())
+        );
         return "posts/detail";
     }
 
     private TradePost findPostById(Long postId) {
         // 저장소의 빈 Optional을 웹 계층의 404 응답 의미로 변환한다.
         return tradePostService.findById(postId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+    }
+
+    private TradePost findOwnedPostById(Long postId, Long memberId) {
+        return tradePostService.findOwnedById(postId, memberId)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
     }
 }

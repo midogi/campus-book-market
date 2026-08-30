@@ -1,20 +1,26 @@
 package com.skc04.campusbookmarket.post.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
+import com.skc04.campusbookmarket.member.domain.Member;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.repository.TradePostRepository;
 import java.util.List;
+import java.util.Optional;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.test.util.ReflectionTestUtils;
 
 @ExtendWith(MockitoExtension.class)
 class TradePostServiceTest {
@@ -121,6 +127,109 @@ class TradePostServiceTest {
         );
     }
 
+    @Test
+    void createUsesLoginMemberAsWriter() {
+        Member writer = member(1L, "writer", "학생 판매자");
+        TradePost savedPost = samplePost(writer);
+        given(tradePostRepository.save(
+                "Spring Basics", 15000L, writer, "Clean copy"
+        )).willReturn(savedPost);
+
+        TradePost result = tradePostService.create(
+                "Spring Basics", 15000L, writer, "Clean copy"
+        );
+
+        assertEquals(savedPost, result);
+        verify(tradePostRepository).save(
+                "Spring Basics", 15000L, writer, "Clean copy"
+        );
+    }
+
+    @Test
+    void writerCanUpdatePost() {
+        Member writer = member(1L, "writer", "학생 판매자");
+        TradePost post = samplePost(writer);
+        given(tradePostRepository.findById(1L)).willReturn(Optional.of(post));
+        given(tradePostRepository.update(
+                1L, "Updated", 20000L, "Updated description"
+        )).willReturn(Optional.of(post));
+
+        Optional<TradePost> result = tradePostService.update(
+                1L, writer.getId(), "Updated", 20000L, "Updated description"
+        );
+
+        assertTrue(result.isPresent());
+        verify(tradePostRepository).update(
+                1L, "Updated", 20000L, "Updated description"
+        );
+    }
+
+    @Test
+    void otherMemberCannotUpdatePost() {
+        Member writer = member(1L, "writer", "학생 판매자");
+        Member otherMember = member(2L, "other", "다른 회원");
+        given(tradePostRepository.findById(1L))
+                .willReturn(Optional.of(samplePost(writer)));
+
+        assertThrows(PostAccessDeniedException.class, () ->
+                tradePostService.update(
+                        1L,
+                        otherMember.getId(),
+                        "Hacked",
+                        1L,
+                        "Hacked description"
+                )
+        );
+
+        verify(tradePostRepository, never()).update(
+                1L, "Hacked", 1L, "Hacked description"
+        );
+    }
+
+    @Test
+    void writerCanDeletePost() {
+        Member writer = member(1L, "writer", "학생 판매자");
+        given(tradePostRepository.findById(1L))
+                .willReturn(Optional.of(samplePost(writer)));
+        given(tradePostRepository.deleteById(1L)).willReturn(true);
+
+        boolean deleted = tradePostService.delete(1L, writer.getId());
+
+        assertTrue(deleted);
+        verify(tradePostRepository).deleteById(1L);
+    }
+
+    @Test
+    void otherMemberCannotDeletePost() {
+        Member writer = member(1L, "writer", "학생 판매자");
+        Member otherMember = member(2L, "other", "다른 회원");
+        given(tradePostRepository.findById(1L))
+                .willReturn(Optional.of(samplePost(writer)));
+
+        assertThrows(PostAccessDeniedException.class, () ->
+                tradePostService.delete(1L, otherMember.getId())
+        );
+
+        verify(tradePostRepository, never()).deleteById(1L);
+    }
+
+    @Test
+    void otherMemberCannotChangeTradeStatus() {
+        Member writer = member(1L, "writer", "학생 판매자");
+        Member otherMember = member(2L, "other", "다른 회원");
+        given(tradePostRepository.findById(1L))
+                .willReturn(Optional.of(samplePost(writer)));
+
+        assertThrows(PostAccessDeniedException.class, () ->
+                tradePostService.updateStatus(
+                        1L, otherMember.getId(), TradeStatus.SOLD
+                )
+        );
+
+        verify(tradePostRepository, never())
+                .updateStatus(1L, TradeStatus.SOLD);
+    }
+
     private TradePost samplePost() {
         return new TradePost(
                 1L,
@@ -130,5 +239,22 @@ class TradePostServiceTest {
                 "Clean copy",
                 TradeStatus.SALE
         );
+    }
+
+    private TradePost samplePost(Member seller) {
+        TradePost post = new TradePost(
+                "Spring Basics",
+                15000L,
+                seller,
+                "Clean copy"
+        );
+        ReflectionTestUtils.setField(post, "id", 1L);
+        return post;
+    }
+
+    private Member member(Long id, String loginId, String name) {
+        Member member = new Member(loginId, "encoded-password", name);
+        ReflectionTestUtils.setField(member, "id", id);
+        return member;
     }
 }

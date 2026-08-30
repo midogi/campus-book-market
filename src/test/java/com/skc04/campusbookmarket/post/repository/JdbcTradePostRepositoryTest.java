@@ -51,7 +51,6 @@ class JdbcTradePostRepositoryTest {
                         savedPost.getId(),
                         "수정 제목",
                         20000,
-                        "수정 판매자",
                         "수정 설명"
                 )
                 .orElseThrow();
@@ -184,7 +183,7 @@ class JdbcTradePostRepositoryTest {
 
     @Test
     void updateAndDeleteReturnFailureWhenPostDoesNotExist() {
-        assertTrue(repository.update(999999L, "없는 글", 1000, "판매자", "설명").isEmpty());
+        assertTrue(repository.update(999999L, "없는 글", 1000, "설명").isEmpty());
         assertTrue(repository.updateStatus(999999L, TradeStatus.SOLD).isEmpty());
         assertFalse(repository.deleteById(999999L));
     }

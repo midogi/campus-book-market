@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.skc04.campusbookmarket.config.QuerydslConfig;
+import com.skc04.campusbookmarket.member.domain.Member;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
@@ -32,6 +33,31 @@ class JpaTradePostRepositoryTest {
 
     @Autowired
     private EntityManager entityManager;
+
+    @Test
+    void saveStoresLoginMemberAsWriter() {
+        Member writer = new Member(
+                "writer",
+                "encoded-password",
+                "학생 판매자"
+        );
+        entityManager.persist(writer);
+
+        TradePost savedPost = repository.save(
+                "스프링 JPA",
+                18000,
+                writer,
+                "작성자 연결 테스트"
+        );
+
+        flushAndClear();
+
+        TradePost foundPost = repository.findById(savedPost.getId())
+                .orElseThrow();
+        assertEquals(writer.getId(), foundPost.getSellerId());
+        assertEquals("학생 판매자", foundPost.getSellerName());
+        assertTrue(foundPost.isWrittenBy(writer.getId()));
+    }
 
     @Test
     void saveAndFindById() {
@@ -80,7 +106,6 @@ class JpaTradePostRepositoryTest {
                 postId,
                 "수정 후 제목",
                 20000,
-                "수정 후 판매자",
                 "수정 후 설명"
         ).orElseThrow();
 
@@ -89,7 +114,7 @@ class JpaTradePostRepositoryTest {
         TradePost foundPost = repository.findById(postId).orElseThrow();
         assertEquals("수정 후 제목", foundPost.getTitle());
         assertEquals(20000, foundPost.getPrice());
-        assertEquals("수정 후 판매자", foundPost.getSellerName());
+        assertEquals("수정 전 판매자", foundPost.getSellerName());
         assertEquals("수정 후 설명", foundPost.getDescription());
         assertEquals(originalCreatedAt, foundPost.getCreatedAt());
         assertNotNull(foundPost.getUpdatedAt());

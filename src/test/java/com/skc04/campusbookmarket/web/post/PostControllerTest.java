@@ -14,22 +14,30 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
+import com.skc04.campusbookmarket.config.WebConfig;
+import com.skc04.campusbookmarket.member.domain.Member;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.service.TradePostPage;
 import com.skc04.campusbookmarket.post.service.TradePostService;
+import com.skc04.campusbookmarket.web.interceptor.LoginCheckInterceptor;
+import com.skc04.campusbookmarket.web.session.SessionConst;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
+import org.springframework.context.annotation.Import;
+import org.springframework.mock.web.MockHttpSession;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 @WebMvcTest(PostController.class)
+@Import({WebConfig.class, LoginCheckInterceptor.class})
 class PostControllerTest {
 
     @Autowired
@@ -37,6 +45,17 @@ class PostControllerTest {
 
     @MockitoBean
     private TradePostService tradePostService;
+
+    private MockHttpSession loginSession;
+
+    @BeforeEach
+    void setUpLoginSession() {
+        loginSession = new MockHttpSession();
+        loginSession.setAttribute(
+                SessionConst.LOGIN_MEMBER,
+                new Member("midogi", "encoded-password", "김동민")
+        );
+    }
 
     @Test
     void list() throws Exception {
@@ -132,7 +151,7 @@ class PostControllerTest {
 
     @Test
     void createForm() throws Exception {
-        mockMvc.perform(get("/posts/new"))
+        mockMvc.perform(get("/posts/new").session(loginSession))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/new"))
                 .andExpect(model().attributeExists("postCreateForm"));
@@ -140,7 +159,9 @@ class PostControllerTest {
 
     @Test
     void createFormUsesEnglishMessages() throws Exception {
-        mockMvc.perform(get("/posts/new").locale(Locale.ENGLISH))
+        mockMvc.perform(get("/posts/new")
+                        .session(loginSession)
+                        .locale(Locale.ENGLISH))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/new"))
                 .andExpect(content().string(containsString("Create Post")))
@@ -156,6 +177,7 @@ class PostControllerTest {
         )).willReturn(savedPost);
 
         mockMvc.perform(post("/posts")
+                        .session(loginSession)
                         .param("title", "Spring Basics")
                         .param("price", "15000")
                         .param("sellerName", "Student Seller")
@@ -167,6 +189,7 @@ class PostControllerTest {
     @Test
     void createRejectsInvalidInput() throws Exception {
         mockMvc.perform(post("/posts")
+                        .session(loginSession)
                         .param("title", " ")
                         .param("price", "-1")
                         .param("sellerName", " ")
@@ -187,7 +210,7 @@ class PostControllerTest {
         TradePost post = samplePost();
         given(tradePostService.findById(1L)).willReturn(Optional.of(post));
 
-        mockMvc.perform(get("/posts/1/edit"))
+        mockMvc.perform(get("/posts/1/edit").session(loginSession))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/edit"))
                 .andExpect(model().attribute("postId", 1L))
@@ -206,6 +229,7 @@ class PostControllerTest {
         )).willReturn(Optional.of(updatedPost));
 
         mockMvc.perform(post("/posts/1/edit")
+                        .session(loginSession)
                         .param("title", "Updated Title")
                         .param("price", "20000")
                         .param("sellerName", "Updated Seller")
@@ -219,6 +243,7 @@ class PostControllerTest {
         given(tradePostService.findById(1L)).willReturn(Optional.of(samplePost()));
 
         mockMvc.perform(post("/posts/1/edit")
+                        .session(loginSession)
                         .param("title", " ")
                         .param("price", "-1")
                         .param("sellerName", " ")
@@ -239,7 +264,7 @@ class PostControllerTest {
     void delete() throws Exception {
         given(tradePostService.delete(1L)).willReturn(true);
 
-        mockMvc.perform(post("/posts/1/delete"))
+        mockMvc.perform(post("/posts/1/delete").session(loginSession))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/posts"));
     }
@@ -248,7 +273,7 @@ class PostControllerTest {
     void deleteReturnsNotFoundWhenPostDoesNotExist() throws Exception {
         given(tradePostService.delete(999L)).willReturn(false);
 
-        mockMvc.perform(post("/posts/999/delete"))
+        mockMvc.perform(post("/posts/999/delete").session(loginSession))
                 .andExpect(status().isNotFound());
     }
 
@@ -273,6 +298,7 @@ class PostControllerTest {
                 .willReturn(Optional.of(post));
 
         mockMvc.perform(post("/posts/1/status")
+                        .session(loginSession)
                         .param("status", "RESERVED"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/posts/1"));
@@ -288,7 +314,15 @@ class PostControllerTest {
                 .willReturn(Optional.empty());
 
         mockMvc.perform(post("/posts/999/status")
+                        .session(loginSession)
                         .param("status", "SOLD"))
                 .andExpect(status().isNotFound());
+    }
+
+    @Test
+    void createFormRedirectsToLoginWhenLoggedOut() throws Exception {
+        mockMvc.perform(get("/posts/new"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/login"));
     }
 }

@@ -6,6 +6,7 @@ import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
 import com.skc04.campusbookmarket.post.service.TradePostPage;
 import com.skc04.campusbookmarket.post.service.TradePostService;
+import com.skc04.campusbookmarket.web.interceptor.LoginRequired;
 import com.skc04.campusbookmarket.web.post.form.PostCreateForm;
 import com.skc04.campusbookmarket.web.post.form.PostUpdateForm;
 import jakarta.validation.Valid;
@@ -62,12 +63,14 @@ public class PostController {
         return "posts/list";
     }
 
+    @LoginRequired
     @GetMapping("/new")
     public String createForm(Model model) {
         model.addAttribute("postCreateForm", new PostCreateForm());
         return "posts/new";
     }
 
+    @LoginRequired
     @PostMapping
     public String create(
             @Valid @ModelAttribute("postCreateForm") PostCreateForm form,
@@ -89,6 +92,7 @@ public class PostController {
         return "redirect:/posts/" + savedPost.getId();
     }
 
+    @LoginRequired
     @GetMapping("/{postId}/edit")
     public String updateForm(@PathVariable Long postId, Model model) {
         TradePost post = findPostById(postId);
@@ -104,6 +108,7 @@ public class PostController {
         return "posts/edit";
     }
 
+    @LoginRequired
     @PostMapping("/{postId}/edit")
     public String update(
             @PathVariable Long postId,
@@ -132,6 +137,7 @@ public class PostController {
         return "redirect:/posts/" + updatedPost.getId();
     }
 
+    @LoginRequired
     @PostMapping("/{postId}/status")
     public String updateStatus(@PathVariable Long postId, @RequestParam TradeStatus status) {
         TradePost updatedPost = tradePostService.updateStatus(postId, status)
@@ -139,6 +145,7 @@ public class PostController {
         return "redirect:/posts/" + updatedPost.getId();
     }
 
+    @LoginRequired
     @PostMapping("/{postId}/delete")
     public String delete(@PathVariable Long postId) {
         boolean deleted = tradePostService.delete(postId);

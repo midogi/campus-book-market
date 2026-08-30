@@ -14,6 +14,7 @@ import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class LoginController {
@@ -25,11 +26,16 @@ public class LoginController {
     }
 
     @GetMapping("/login")
-    public String loginForm(Model model) {
+    public String loginForm(
+            @RequestParam(defaultValue = "/") String redirectURL,
+            Model model
+    ) {
+        model.addAttribute("loginForm", new LoginForm());
         model.addAttribute(
-                "loginForm",
-                new LoginForm()
+                "redirectURL",
+                normalizeRedirectURL(redirectURL)
         );
+
         return "login/login";
     }
 
@@ -37,17 +43,23 @@ public class LoginController {
     public String login(
             @Valid @ModelAttribute("loginForm") LoginForm form,
             BindingResult bindingResult,
-            HttpServletRequest request
+            @RequestParam(defaultValue = "/") String redirectURL,
+            HttpServletRequest request,
+            Model model
     ) {
+        String safeRedirectURL =
+                normalizeRedirectURL(redirectURL);
+
+        model.addAttribute("redirectURL", safeRedirectURL);
+
         if (bindingResult.hasErrors()) {
             return "login/login";
         }
 
-        Optional<Member> loginMember =
-                loginService.login(
-                        form.getLoginId(),
-                        form.getPassword()
-                );
+        Optional<Member> loginMember = loginService.login(
+                form.getLoginId(),
+                form.getPassword()
+        );
 
         if (loginMember.isEmpty()) {
             bindingResult.reject("validation.login.failed");
@@ -55,13 +67,12 @@ public class LoginController {
         }
 
         HttpSession session = request.getSession();
-
         session.setAttribute(
                 SessionConst.LOGIN_MEMBER,
                 loginMember.get()
         );
 
-        return "redirect:/";
+        return "redirect:" + safeRedirectURL;
     }
 
     @PostMapping("/logout")
@@ -72,5 +83,17 @@ public class LoginController {
             session.invalidate();
         }
         return "redirect:/";
+    }
+
+    private static String normalizeRedirectURL(String redirectURL) {
+        if (redirectURL == null
+                || !redirectURL.startsWith("/")
+                || redirectURL.startsWith("//")
+                || redirectURL.contains("\r")
+                || redirectURL.contains("\n")) {
+            return "/";
+        }
+
+        return redirectURL;
     }
 }

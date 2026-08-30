@@ -6,6 +6,7 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.not;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -80,7 +81,10 @@ class PostControllerTest {
                         "searchTypes", "tradeStatuses", "sortOptions"
                 ))
                 .andExpect(content().string(containsString("name=\"searchType\"")))
-                .andExpect(content().string(containsString("name=\"sort\"")));
+                .andExpect(content().string(containsString("name=\"sort\"")))
+                .andExpect(content().string(not(containsString(
+                        "href=\"/posts/new\""
+                ))));
 
         verify(tradePostService).search(
                 "", TradePostSearchType.TITLE, null, TradePostSort.LATEST, 1
@@ -138,7 +142,16 @@ class PostControllerTest {
         mockMvc.perform(get("/posts/1"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("posts/detail"))
-                .andExpect(model().attribute("post", post));
+                .andExpect(model().attribute("post", post))
+                .andExpect(content().string(not(containsString(
+                        "/posts/1/edit"
+                ))))
+                .andExpect(content().string(not(containsString(
+                        "/posts/1/status"
+                ))))
+                .andExpect(content().string(not(containsString(
+                        "/posts/1/delete"
+                ))));
     }
 
     @Test
@@ -323,6 +336,42 @@ class PostControllerTest {
     void createFormRedirectsToLoginWhenLoggedOut() throws Exception {
         mockMvc.perform(get("/posts/new"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/login"));
+                .andExpect(redirectedUrl(
+                        "/login?redirectURL=%2Fposts%2Fnew"
+                ));
+    }
+
+    @Test
+    void updateFormRedirectsToLoginWhenLoggedOut() throws Exception {
+        mockMvc.perform(get("/posts/1/edit"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(
+                        "/login?redirectURL=%2Fposts%2F1%2Fedit"
+                ));
+
+        verify(tradePostService, never()).findById(anyLong());
+    }
+
+    @Test
+    void deleteRedirectsToPostListLoginWhenLoggedOut() throws Exception {
+        mockMvc.perform(post("/posts/1/delete"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl(
+                        "/login?redirectURL=%2Fposts"
+                ));
+
+        verify(tradePostService, never()).delete(anyLong());
+    }
+
+    @Test
+    void detailShowsChangeControlsWhenLoggedIn() throws Exception {
+        TradePost post = samplePost();
+        given(tradePostService.findById(1L)).willReturn(Optional.of(post));
+
+        mockMvc.perform(get("/posts/1").session(loginSession))
+                .andExpect(status().isOk())
+                .andExpect(content().string(containsString("/posts/1/edit")))
+                .andExpect(content().string(containsString("/posts/1/status")))
+                .andExpect(content().string(containsString("/posts/1/delete")));
     }
 }

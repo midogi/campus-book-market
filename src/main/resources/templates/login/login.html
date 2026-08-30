@@ -52,6 +52,10 @@
           th:object="${loginForm}"
           method="post">
 
+        <input type="hidden"
+               name="redirectURL"
+               th:value="${redirectURL}">
+
         <div th:if="${#fields.hasGlobalErrors()}">
             <p class="field-error"
                th:each="error : ${#fields.globalErrors()}"

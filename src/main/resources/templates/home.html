@@ -25,7 +25,9 @@
                 <div class="hero-actions">
                     <a class="button button--light" th:href="@{/posts}" href="/posts"
                        th:text="#{button.home.browse}">거래글 둘러보기</a>
-                    <a class="button button--primary" th:href="@{/posts/new}" href="/posts/new"
+                    <a class="button button--primary"
+                       th:if="${loginMember != null}"
+                       th:href="@{/posts/new}" href="/posts/new"
                        th:text="#{button.home.sell}">판매글 등록</a>
                 </div>
             </div>

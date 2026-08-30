@@ -16,7 +16,9 @@
             <p class="eyebrow">Campus Marketplace</p>
             <h1 th:text="#{page.post.list}">게시글 목록</h1>
         </div>
-        <a class="button button--primary" th:href="@{/posts/new}" href="/posts/new"
+        <a class="button button--primary"
+           th:if="${loginMember != null}"
+           th:href="@{/posts/new}" href="/posts/new"
            th:text="#{link.post.create}">게시글 등록</a>
     </div>
 

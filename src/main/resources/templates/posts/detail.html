@@ -53,7 +53,8 @@
                 </section>
             </div>
 
-            <aside class="detail-aside">
+            <aside class="detail-aside"
+                   th:if="${loginMember != null}">
                 <h2 th:text="#{section.post.statusChange}">거래 상태 변경</h2>
 
                 <form class="status-control"
@@ -79,11 +80,14 @@
 
     <div class="detail-actions">
         <a class="button button--primary"
+           th:if="${loginMember != null}"
            th:href="@{/posts/{postId}/edit(postId=${post.id})}"
            th:text="#{link.post.edit}">수정</a>
         <a class="button button--secondary" th:href="@{/posts}" href="/posts"
            th:text="#{link.post.list}">목록으로 돌아가기</a>
-        <form th:action="@{/posts/{postId}/delete(postId=${post.id})}" method="post">
+        <form th:if="${loginMember != null}"
+              th:action="@{/posts/{postId}/delete(postId=${post.id})}"
+              method="post">
             <button class="button button--danger" type="submit"
                     th:text="#{button.post.delete}">삭제</button>
         </form>

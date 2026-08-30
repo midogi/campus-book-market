@@ -41,7 +41,22 @@ class LoginControllerTest {
         mockMvc.perform(get("/login"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("login/login"))
-                .andExpect(model().attributeExists("loginForm"));
+                .andExpect(model().attributeExists("loginForm"))
+                .andExpect(model().attribute("redirectURL", "/"))
+                .andExpect(content().string(containsString(
+                        "name=\"redirectURL\""
+                )));
+    }
+
+    @Test
+    void loginFormKeepsRedirectURL() throws Exception {
+        mockMvc.perform(get("/login")
+                        .param("redirectURL", "/posts/new"))
+                .andExpect(status().isOk())
+                .andExpect(model().attribute("redirectURL", "/posts/new"))
+                .andExpect(content().string(containsString(
+                        "value=\"/posts/new\""
+                )));
     }
 
     @Test
@@ -52,9 +67,10 @@ class LoginControllerTest {
 
         mockMvc.perform(post("/login")
                         .param("loginId", "midogi")
-                        .param("password", "password123"))
+                        .param("password", "password123")
+                        .param("redirectURL", "/posts/new"))
                 .andExpect(status().is3xxRedirection())
-                .andExpect(redirectedUrl("/"))
+                .andExpect(redirectedUrl("/posts/new"))
                 .andExpect(request().sessionAttribute(
                         SessionConst.LOGIN_MEMBER,
                         member
@@ -65,9 +81,11 @@ class LoginControllerTest {
     void loginRejectsBlankInput() throws Exception {
         mockMvc.perform(post("/login")
                         .param("loginId", " ")
-                        .param("password", " "))
+                        .param("password", " ")
+                        .param("redirectURL", "/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("login/login"))
+                .andExpect(model().attribute("redirectURL", "/posts/new"))
                 .andExpect(model().attributeHasFieldErrors(
                         "loginForm",
                         "loginId",
@@ -85,13 +103,29 @@ class LoginControllerTest {
         mockMvc.perform(post("/login")
                         .locale(Locale.KOREAN)
                         .param("loginId", "midogi")
-                        .param("password", "wrong-password"))
+                        .param("password", "wrong-password")
+                        .param("redirectURL", "/posts/new"))
                 .andExpect(status().isOk())
                 .andExpect(view().name("login/login"))
+                .andExpect(model().attribute("redirectURL", "/posts/new"))
                 .andExpect(model().attributeHasErrors("loginForm"))
                 .andExpect(content().string(containsString(
                         "아이디 또는 비밀번호가 맞지 않습니다."
                 )));
+    }
+
+    @Test
+    void loginRejectsExternalRedirectURL() throws Exception {
+        Member member = sampleMember();
+        given(loginService.login("midogi", "password123"))
+                .willReturn(Optional.of(member));
+
+        mockMvc.perform(post("/login")
+                        .param("loginId", "midogi")
+                        .param("password", "password123")
+                        .param("redirectURL", "//evil.example"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/"));
     }
 
     @Test

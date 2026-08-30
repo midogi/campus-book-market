@@ -17,9 +17,27 @@
             <a class="primary-nav__link"
                th:href="@{/posts}"
                th:text="#{nav.posts}">거래 게시판</a>
-            <a class="primary-nav__link primary-nav__link--accent"
-               th:href="@{/members/new}"
-               th:text="#{nav.join}">회원가입</a>
+
+            <th:block th:if="${loginMember == null}">
+                <a class="primary-nav__link"
+                   th:href="@{/login}"
+                   th:text="#{nav.login}">로그인</a>
+                <a class="primary-nav__link primary-nav__link--accent"
+                   th:href="@{/members/new}"
+                   th:text="#{nav.join}">회원가입</a>
+            </th:block>
+
+            <th:block th:if="${loginMember != null}">
+                <span class="primary-nav__member"
+                      th:text="#{nav.member.greeting(${loginMember.name})}">김동민님</span>
+                <form class="primary-nav__form"
+                      th:action="@{/logout}"
+                      method="post">
+                    <button class="primary-nav__link primary-nav__link--accent"
+                            type="submit"
+                            th:text="#{nav.logout}">로그아웃</button>
+                </form>
+            </th:block>
         </nav>
     </div>
 </header>

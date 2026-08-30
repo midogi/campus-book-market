@@ -172,6 +172,23 @@ img {
     color: var(--green-dark);
 }
 
+.primary-nav__member {
+    padding: 7px 6px;
+    color: var(--muted);
+    font-size: 14px;
+    font-weight: 700;
+    white-space: nowrap;
+}
+
+.primary-nav__form {
+    margin: 0;
+}
+
+.primary-nav__form .primary-nav__link {
+    background: transparent;
+    cursor: pointer;
+}
+
 .home-hero {
     position: relative;
     height: calc(100svh - 164px);

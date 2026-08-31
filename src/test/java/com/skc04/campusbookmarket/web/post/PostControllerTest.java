@@ -144,10 +144,29 @@ class PostControllerTest {
 
     @Test
     void detailReturnsNotFoundWhenPostDoesNotExist() throws Exception {
-        given(tradePostService.findById(999L)).willReturn(Optional.empty());
+        given(tradePostService.findById(999L))
+                .willReturn(Optional.empty());
 
-        mockMvc.perform(get("/posts/999"))
-                .andExpect(status().isNotFound());
+        mockMvc.perform(get("/posts/999").locale(Locale.KOREAN))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("error/404"))
+                .andExpect(content().string(
+                        containsString("게시글을 찾을 수 없습니다")
+                ));
+    }
+
+    @Test
+    void notFoundPageUsesEnglishMessages() throws Exception {
+        given(tradePostService.findById(999L))
+                .willReturn(Optional.empty());
+
+        mockMvc.perform(get("/posts/999").locale(Locale.ENGLISH))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("error/404"))
+                .andExpect(content().string(containsString("Post Not Found")))
+                .andExpect(content().string(containsString(
+                        "This post does not exist or has been deleted."
+                )));
     }
 
     @Test
@@ -299,10 +318,15 @@ class PostControllerTest {
 
         mockMvc.perform(post("/posts/1/edit")
                         .session(otherMemberSession)
+                        .locale(Locale.KOREAN)
                         .param("title", "Hacked Title")
                         .param("price", "1")
                         .param("description", "Hacked"))
-                .andExpect(status().isForbidden());
+                .andExpect(status().isForbidden())
+                .andExpect(view().name("error/403"))
+                .andExpect(content().string(containsString(
+                        "접근 권한이 없습니다"
+                )));
 
         verify(tradePostService, never()).update(
                 anyLong(), anyLong(), anyString(), anyLong(), anyString()

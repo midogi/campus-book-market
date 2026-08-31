@@ -5,6 +5,7 @@ import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
 import com.skc04.campusbookmarket.post.domain.TradePostSort;
 import com.skc04.campusbookmarket.post.domain.TradeStatus;
+import com.skc04.campusbookmarket.post.service.PostNotFoundException;
 import com.skc04.campusbookmarket.post.service.TradePostPage;
 import com.skc04.campusbookmarket.post.service.TradePostService;
 import com.skc04.campusbookmarket.web.interceptor.LoginRequired;
@@ -12,7 +13,6 @@ import com.skc04.campusbookmarket.web.post.form.PostCreateForm;
 import com.skc04.campusbookmarket.web.post.form.PostUpdateForm;
 import com.skc04.campusbookmarket.web.session.SessionConst;
 import jakarta.validation.Valid;
-import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -23,7 +23,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.SessionAttribute;
-import org.springframework.web.server.ResponseStatusException;
 
 /** 거래 게시글의 목록·등록·조회·수정·삭제 화면 요청을 처리한다. */
 @Controller
@@ -139,7 +138,7 @@ public class PostController {
                         form.getPrice(),
                         form.getDescription()
                 )
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new PostNotFoundException(postId));
 
         // 수정 POST를 마친 뒤 상세 GET 요청으로 전환한다.
         return "redirect:/posts/" + updatedPost.getId();
@@ -157,7 +156,7 @@ public class PostController {
                         loginMember.getId(),
                         status
                 )
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new PostNotFoundException(postId));
         return "redirect:/posts/" + updatedPost.getId();
     }
 
@@ -170,7 +169,7 @@ public class PostController {
         boolean deleted = tradePostService.delete(postId, loginMember.getId());
 
         if (!deleted) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND);
+            throw new PostNotFoundException(postId);
         }
 
         return "redirect:/posts";
@@ -199,11 +198,11 @@ public class PostController {
     private TradePost findPostById(Long postId) {
         // 저장소의 빈 Optional을 웹 계층의 404 응답 의미로 변환한다.
         return tradePostService.findById(postId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new PostNotFoundException(postId));
     }
 
     private TradePost findOwnedPostById(Long postId, Long memberId) {
         return tradePostService.findOwnedById(postId, memberId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND));
+                .orElseThrow(() -> new PostNotFoundException(postId));
     }
 }

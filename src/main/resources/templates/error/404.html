@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{error.404.title}">게시글을 찾을 수 없습니다</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header th:replace="~{fragments/site :: header}"></header>
+
+<main class="page-shell">
+    <section class="empty-state">
+        <strong>404</strong>
+        <h1 th:text="#{error.404.title}">게시글을 찾을 수 없습니다</h1>
+
+        <p th:text="#{error.404.description}">
+            삭제되었거나 존재하지 않는 게시글입니다.
+        </p>
+
+        <a class="button button--primary"
+           th:href="@{/posts}"
+           th:text="#{link.post.list}">
+            게시글 목록으로 돌아가기
+        </a>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/site :: footer}"></footer>
+</body>
+</html>

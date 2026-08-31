@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{error.403.title}">접근 권한이 없습니다</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}">
+</head>
+<body>
+<header th:replace="~{fragments/site :: header}"></header>
+
+<main class="page-shell">
+    <section class="empty-state">
+        <strong>403</strong>
+        <h1 th:text="#{error.403.title}">접근 권한이 없습니다</h1>
+
+        <p th:text="#{error.403.description}">
+            이 게시글을 변경할 권한이 없습니다.
+        </p>
+
+        <a class="button button--primary"
+           th:href="@{/posts}"
+           th:text="#{link.post.list}">
+            게시글 목록으로 돌아가기
+        </a>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/site :: footer}"></footer>
+</body>
+</html>

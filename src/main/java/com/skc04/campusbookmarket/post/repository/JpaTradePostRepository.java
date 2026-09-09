@@ -53,6 +53,11 @@ public class JpaTradePostRepository implements TradePostRepository {
     }
 
     @Override
+    public Optional<TradePost> findByIdForUpdate(Long id) {
+        return springDataRepository.findByIdForUpdate(id);
+    }
+
+    @Override
     public List<TradePost> search(String keyword, TradeStatus status) {
         return search(
                 keyword,
@@ -173,6 +178,22 @@ public class JpaTradePostRepository implements TradePostRepository {
         }
         TradePost post = foundPost.get();
         post.changeStatus(status);
+        return Optional.of(post);
+    }
+
+    @Override
+    public Optional<TradePost> updateImage(
+            Long id,
+            String imageOriginalName,
+            String imageStoredName
+    ) {
+        Optional<TradePost> foundPost = springDataRepository.findById(id);
+        if (foundPost.isEmpty()) {
+            return Optional.empty();
+        }
+
+        TradePost post = foundPost.get();
+        post.changeImage(imageOriginalName, imageStoredName);
         return Optional.of(post);
     }
 

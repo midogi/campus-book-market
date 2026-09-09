@@ -28,6 +28,7 @@
             </th:block>
 
             <th:block th:if="${loginMember != null}">
+                <a class="primary-nav__link" th:href="@{/trades}" th:text="#{trade.history}">내 거래</a>
                 <span class="primary-nav__member"
                       th:text="#{nav.member.greeting(${loginMember.name})}">김동민님</span>
                 <form class="primary-nav__form"

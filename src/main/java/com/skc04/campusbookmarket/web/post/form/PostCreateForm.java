@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.PositiveOrZero;
 import jakarta.validation.constraints.Size;
+import org.springframework.web.multipart.MultipartFile;
 
 /**
  * 게시글 등록 폼의 HTTP 입력을 받는 객체다.
@@ -22,6 +23,8 @@ public class PostCreateForm {
     @NotBlank(message = "{validation.post.description.required}")
     @Size(max = 1000, message = "{validation.post.description.size}")
     private String description;
+
+    private MultipartFile imageFile;
 
     public String getTitle() {
         return title;
@@ -45,5 +48,13 @@ public class PostCreateForm {
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public MultipartFile getImageFile() {
+        return imageFile;
+    }
+
+    public void setImageFile(MultipartFile imageFile) {
+        this.imageFile = imageFile;
     }
 }

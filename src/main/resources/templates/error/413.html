@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{error.413.title}">파일이 너무 큽니다</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
+</head>
+<body>
+<header th:replace="~{fragments/site :: header}"></header>
+<main class="page-shell">
+    <section class="empty-state">
+        <div>
+            <h1 th:text="#{error.413.title}">파일이 너무 큽니다</h1>
+            <p th:text="#{error.413.description}">5MB 이하의 이미지를 선택해 주세요.</p>
+            <a class="button button--primary" th:href="@{/posts/new}"
+               th:text="#{link.post.create}">게시글 등록</a>
+        </div>
+    </section>
+</main>
+</body>
+</html>

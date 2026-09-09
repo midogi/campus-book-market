@@ -59,6 +59,12 @@ public class TradePost {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Column(name = "image_original_name", length = 255)
+    private String imageOriginalName;
+
+    @Column(name = "image_stored_name", length = 255)
+    private String imageStoredName;
+
     /** JDBC RowMapper가 DB의 한 행을 엔티티로 복원할 때 사용하는 생성자다. */
     public TradePost(
             Long id,
@@ -79,7 +85,9 @@ public class TradePost {
                 description,
                 status,
                 createdAt,
-                updatedAt
+                updatedAt,
+                null,
+                null
         );
     }
 
@@ -95,6 +103,35 @@ public class TradePost {
             LocalDateTime createdAt,
             LocalDateTime updatedAt
     ) {
+        this(
+                id,
+                sellerId,
+                title,
+                price,
+                sellerName,
+                description,
+                status,
+                createdAt,
+                updatedAt,
+                null,
+                null
+        );
+    }
+
+    /** JDBC RowMapper가 이미지 메타데이터까지 포함한 DB 한 행을 복원할 때 사용한다. */
+    public TradePost(
+            Long id,
+            Long sellerId,
+            String title,
+            long price,
+            String sellerName,
+            String description,
+            TradeStatus status,
+            LocalDateTime createdAt,
+            LocalDateTime updatedAt,
+            String imageOriginalName,
+            String imageStoredName
+    ) {
         this.id = id;
         this.sellerId = sellerId;
         this.title = title;
@@ -104,6 +141,8 @@ public class TradePost {
         this.status = status;
         this.createdAt = createdAt;
         this.updatedAt = updatedAt;
+        this.imageOriginalName = imageOriginalName;
+        this.imageStoredName = imageStoredName;
     }
 
     /** 로그인 회원이 새 게시글을 등록할 때 사용한다. 판매자 이름은 세션 회원에게서 정한다. */
@@ -123,6 +162,8 @@ public class TradePost {
         this.status = TradeStatus.SALE;
         this.createdAt = now;
         this.updatedAt = now;
+        this.imageOriginalName = null;
+        this.imageStoredName = null;
     }
 
     /** 새 게시글을 만들 때 사용하며 ID와 최초 상태·시각은 내부에서 결정한다. */
@@ -208,6 +249,18 @@ public class TradePost {
         return updatedAt;
     }
 
+    public String getImageOriginalName() {
+        return imageOriginalName;
+    }
+
+    public String getImageStoredName() {
+        return imageStoredName;
+    }
+
+    public boolean hasImage() {
+        return imageStoredName != null && !imageStoredName.isBlank();
+    }
+
     public void updateDetails(
             String title,
             long price,
@@ -230,6 +283,18 @@ public class TradePost {
             throw new IllegalArgumentException("거래 상태는 필수입니다.");
         }
         this.status = status;
+        this.updatedAt = LocalDateTime.now();
+    }
+
+    /** 대표 이미지 메타데이터를 교체하거나 두 값이 null이면 이미지를 제거한다. */
+    public void changeImage(String originalName, String storedName) {
+        boolean bothPresent = originalName != null && storedName != null;
+        boolean bothAbsent = originalName == null && storedName == null;
+        if (!bothPresent && !bothAbsent) {
+            throw new IllegalArgumentException("이미지 원본명과 저장명은 함께 설정해야 합니다.");
+        }
+        this.imageOriginalName = originalName;
+        this.imageStoredName = storedName;
         this.updatedAt = LocalDateTime.now();
     }
 }

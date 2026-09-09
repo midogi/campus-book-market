@@ -1,5 +1,6 @@
 package com.skc04.campusbookmarket.web.post;
 
+import com.skc04.campusbookmarket.file.InvalidImageException;
 import com.skc04.campusbookmarket.member.domain.Member;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
@@ -84,12 +85,23 @@ public class PostController {
             return "posts/new";
         }
 
-        TradePost savedPost = tradePostService.create(
-                form.getTitle(),
-                form.getPrice(),
-                loginMember,
-                form.getDescription()
-        );
+        TradePost savedPost;
+        try {
+            savedPost = tradePostService.create(
+                    form.getTitle(),
+                    form.getPrice(),
+                    loginMember,
+                    form.getDescription(),
+                    form.getImageFile()
+            );
+        } catch (InvalidImageException exception) {
+            bindingResult.rejectValue(
+                    "imageFile",
+                    "validation.post.image.invalid",
+                    exception.getMessage()
+            );
+            return "posts/new";
+        }
 
         // PRG 패턴으로 등록 POST의 새로고침 중복 실행을 방지한다.
         return "redirect:/posts/" + savedPost.getId();
@@ -110,6 +122,7 @@ public class PostController {
         form.setDescription(post.getDescription());
 
         model.addAttribute("postId", postId);
+        model.addAttribute("currentImageStoredName", post.getImageStoredName());
         model.addAttribute("postUpdateForm", form);
         return "posts/edit";
     }
@@ -124,21 +137,37 @@ public class PostController {
             Model model
     ) {
         // 입력 오류가 있더라도 다른 회원의 수정 화면을 보여 주지 않도록 권한을 먼저 확인한다.
-        findOwnedPostById(postId, loginMember.getId());
+        TradePost currentPost = findOwnedPostById(postId, loginMember.getId());
+        model.addAttribute("postId", postId);
+        model.addAttribute(
+                "currentImageStoredName",
+                currentPost.getImageStoredName()
+        );
 
         if (bindingResult.hasErrors()) {
-            model.addAttribute("postId", postId);
             return "posts/edit";
         }
 
-        TradePost updatedPost = tradePostService.update(
-                        postId,
-                        loginMember.getId(),
-                        form.getTitle(),
-                        form.getPrice(),
-                        form.getDescription()
-                )
-                .orElseThrow(() -> new PostNotFoundException(postId));
+        TradePost updatedPost;
+        try {
+            updatedPost = tradePostService.update(
+                            postId,
+                            loginMember.getId(),
+                            form.getTitle(),
+                            form.getPrice(),
+                            form.getDescription(),
+                            form.getImageFile(),
+                            form.isRemoveImage()
+                    )
+                    .orElseThrow(() -> new PostNotFoundException(postId));
+        } catch (InvalidImageException exception) {
+            bindingResult.rejectValue(
+                    "imageFile",
+                    "validation.post.image.invalid",
+                    exception.getMessage()
+            );
+            return "posts/edit";
+        }
 
         // 수정 POST를 마친 뒤 상세 GET 요청으로 전환한다.
         return "redirect:/posts/" + updatedPost.getId();

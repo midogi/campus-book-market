@@ -140,6 +140,27 @@ class JpaTradePostRepositoryTest {
     }
 
     @Test
+    void updateImageStoresAndRemovesMetadata() {
+        TradePost savedPost = repository.save(
+                "이미지 게시글", 15000, "김동민", "대표 이미지 테스트"
+        );
+
+        repository.updateImage(
+                savedPost.getId(), "book.png", "generated.png"
+        ).orElseThrow();
+        flushAndClear();
+
+        TradePost withImage = repository.findById(savedPost.getId()).orElseThrow();
+        assertEquals("book.png", withImage.getImageOriginalName());
+        assertEquals("generated.png", withImage.getImageStoredName());
+        assertTrue(withImage.hasImage());
+
+        repository.updateImage(savedPost.getId(), null, null).orElseThrow();
+        flushAndClear();
+        assertFalse(repository.findById(savedPost.getId()).orElseThrow().hasImage());
+    }
+
+    @Test
     void deleteRemovesPost() {
         TradePost savedPost = repository.save(
                 "삭제할 게시글",

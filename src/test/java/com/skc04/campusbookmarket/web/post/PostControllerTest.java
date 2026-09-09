@@ -5,10 +5,12 @@ import static org.hamcrest.Matchers.not;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.nullable;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.model;
@@ -17,6 +19,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.view;
 
 import com.skc04.campusbookmarket.config.WebConfig;
+import com.skc04.campusbookmarket.file.InvalidImageException;
 import com.skc04.campusbookmarket.member.domain.Member;
 import com.skc04.campusbookmarket.post.domain.TradePost;
 import com.skc04.campusbookmarket.post.domain.TradePostSearchType;
@@ -36,6 +39,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.mock.web.MockHttpSession;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.util.ReflectionTestUtils;
 import org.springframework.test.web.servlet.MockMvc;
@@ -178,7 +182,8 @@ class PostControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(model().attribute("canManage", true))
                 .andExpect(content().string(containsString("/posts/1/edit")))
-                .andExpect(content().string(containsString("/posts/1/status")))
+                .andExpect(content().string(containsString("/posts/1/requests")))
+                .andExpect(content().string(not(containsString("/posts/1/status"))))
                 .andExpect(content().string(containsString("/posts/1/delete")));
     }
 
@@ -218,7 +223,7 @@ class PostControllerTest {
     void createUsesLoginMemberAsWriter() throws Exception {
         TradePost savedPost = samplePost(writer);
         given(tradePostService.create(
-                "Spring Basics", 15000L, writer, "Clean copy"
+                "Spring Basics", 15000L, writer, "Clean copy", null
         )).willReturn(savedPost);
 
         mockMvc.perform(post("/posts")
@@ -230,8 +235,53 @@ class PostControllerTest {
                 .andExpect(redirectedUrl("/posts/1"));
 
         verify(tradePostService).create(
-                "Spring Basics", 15000L, writer, "Clean copy"
+                "Spring Basics", 15000L, writer, "Clean copy", null
         );
+    }
+
+    @Test
+    void createAcceptsRepresentativeImage() throws Exception {
+        TradePost savedPost = samplePost(writer);
+        MockMultipartFile image = new MockMultipartFile(
+                "imageFile",
+                "book.png",
+                "image/png",
+                new byte[]{(byte) 0x89, 0x50, 0x4E, 0x47}
+        );
+        given(tradePostService.create(
+                "Spring Basics", 15000L, writer, "Clean copy", image
+        )).willReturn(savedPost);
+
+        mockMvc.perform(multipart("/posts")
+                        .file(image)
+                        .session(writerSession)
+                        .param("title", "Spring Basics")
+                        .param("price", "15000")
+                        .param("description", "Clean copy"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/posts/1"));
+
+        verify(tradePostService).create(
+                "Spring Basics", 15000L, writer, "Clean copy", image
+        );
+    }
+
+    @Test
+    void createShowsImageValidationError() throws Exception {
+        given(tradePostService.create(
+                "Spring Basics", 15000L, writer, "Clean copy", null
+        )).willThrow(new InvalidImageException("지원하지 않는 이미지입니다."));
+
+        mockMvc.perform(post("/posts")
+                        .session(writerSession)
+                        .param("title", "Spring Basics")
+                        .param("price", "15000")
+                        .param("description", "Clean copy"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("posts/new"))
+                .andExpect(model().attributeHasFieldErrors(
+                        "postCreateForm", "imageFile"
+                ));
     }
 
     @Test
@@ -248,7 +298,8 @@ class PostControllerTest {
                 ));
 
         verify(tradePostService, never()).create(
-                anyString(), anyLong(), any(Member.class), anyString()
+                anyString(), anyLong(), any(Member.class), anyString(),
+                nullable(org.springframework.web.multipart.MultipartFile.class)
         );
     }
 
@@ -277,7 +328,9 @@ class PostControllerTest {
                 writer.getId(),
                 "Updated Title",
                 20000L,
-                "Updated description"
+                "Updated description",
+                null,
+                false
         )).willReturn(Optional.of(updatedPost));
 
         mockMvc.perform(post("/posts/1/edit")
@@ -307,7 +360,9 @@ class PostControllerTest {
                 ));
 
         verify(tradePostService, never()).update(
-                anyLong(), anyLong(), anyString(), anyLong(), anyString()
+                anyLong(), anyLong(), anyString(), anyLong(), anyString(),
+                nullable(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.ArgumentMatchers.anyBoolean()
         );
     }
 
@@ -329,7 +384,9 @@ class PostControllerTest {
                 )));
 
         verify(tradePostService, never()).update(
-                anyLong(), anyLong(), anyString(), anyLong(), anyString()
+                anyLong(), anyLong(), anyString(), anyLong(), anyString(),
+                nullable(org.springframework.web.multipart.MultipartFile.class),
+                org.mockito.ArgumentMatchers.anyBoolean()
         );
     }
 

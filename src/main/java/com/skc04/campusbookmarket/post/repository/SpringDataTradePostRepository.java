@@ -9,5 +9,9 @@ import org.springframework.data.jpa.repository.JpaRepository;
  */
 public interface SpringDataTradePostRepository extends JpaRepository<TradePost, Long> {
 
+    @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
+    @org.springframework.data.jpa.repository.Query("select p from TradePost p where p.id = :id")
+    java.util.Optional<TradePost> findByIdForUpdate(Long id);
+
     List<TradePost> findByTitleContainingIgnoreCaseOrderByIdDesc(String keyword);
 }

@@ -38,4 +38,12 @@ out/
 
 ### Local H2 database ###
 /data/
-/data-backup/
+/data-backup*/
+
+### Local uploaded files ###
+/uploads/
+
+### Local secrets ###
+.env
+.env.*
+!.env.example

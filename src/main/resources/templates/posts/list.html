@@ -101,6 +101,14 @@
 
     <ul class="post-list" th:unless="${#lists.isEmpty(posts)}">
         <li class="post-row" th:each="post : ${posts}">
+            <a class="post-row__thumbnail"
+               th:href="@{/posts/{postId}(postId=${post.id})}"
+               th:attr="aria-label=${post.title}">
+                <img th:if="${post.hasImage()}"
+                     th:src="@{/post-images/{storedName}(storedName=${post.imageStoredName})}"
+                     th:alt="${post.title}">
+                <span th:unless="${post.hasImage()}" aria-hidden="true">CB</span>
+            </a>
             <div class="post-row__main">
                 <div class="post-row__meta">
                     <span class="status-badge"

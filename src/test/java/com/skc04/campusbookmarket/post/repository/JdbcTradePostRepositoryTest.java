@@ -75,6 +75,19 @@ class JdbcTradePostRepositoryTest {
     }
 
     @Test
+    void updateImageStoresMetadata() {
+        TradePost savedPost = repository.save("이미지 글", 10000, "판매자", "설명");
+
+        TradePost updatedPost = repository.updateImage(
+                savedPost.getId(), "book.png", "generated.png"
+        ).orElseThrow();
+
+        assertEquals("book.png", updatedPost.getImageOriginalName());
+        assertEquals("generated.png", updatedPost.getImageStoredName());
+        assertTrue(updatedPost.hasImage());
+    }
+
+    @Test
     void searchCombinesKeywordAndStatusFilters() {
         repository.save("Spring MVC", 15000, "판매자1", "설명1");
         TradePost springSoldPost = repository.save(

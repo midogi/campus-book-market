@@ -28,6 +28,14 @@
 
         <div class="detail-layout">
             <div class="detail-main">
+                <figure class="detail-image" th:if="${post.hasImage()}">
+                    <img th:src="@{/post-images/{storedName}(storedName=${post.imageStoredName})}"
+                         th:alt="${post.title}">
+                </figure>
+                <div class="detail-image detail-image--empty" th:unless="${post.hasImage()}">
+                    <span th:text="#{empty.post.image}">등록된 대표 이미지가 없습니다.</span>
+                </div>
+
                 <dl class="detail-meta">
                     <div>
                         <dt th:text="#{label.post.sellerName}">판매자</dt>
@@ -53,25 +61,18 @@
                 </section>
             </div>
 
-            <aside class="detail-aside" th:if="${canManage}">
-                <h2 th:text="#{section.post.statusChange}">거래 상태 변경</h2>
-
-                <form class="status-control"
-                      th:action="@{/posts/{postId}/status(postId=${post.id})}"
-                      method="post">
-                    <button type="submit" name="status" value="SALE"
-                            th:classappend="${post.status.name() == 'SALE'} ? 'is-active' : ''"
-                            th:disabled="${post.status.name() == 'SALE'}"
-                            th:text="#{tradeStatus.SALE}">판매 중</button>
-                    <button type="submit" name="status" value="RESERVED"
-                            th:classappend="${post.status.name() == 'RESERVED'} ? 'is-active' : ''"
-                            th:disabled="${post.status.name() == 'RESERVED'}"
-                            th:text="#{tradeStatus.RESERVED}">예약 중</button>
-                    <button type="submit" name="status" value="SOLD"
-                            th:classappend="${post.status.name() == 'SOLD'} ? 'is-active' : ''"
-                            th:disabled="${post.status.name() == 'SOLD'}"
-                            th:text="#{tradeStatus.SOLD}">판매 완료</button>
+            <aside class="detail-aside">
+                <h2 th:text="#{trade.section}">거래하기</h2>
+                <a th:if="${canManage}" class="button button--primary"
+                   th:href="@{/posts/{id}/requests(id=${post.id})}" th:text="#{trade.received}">신청 목록</a>
+                <form th:if="${loginMember != null and !canManage and post.sellerId != null and post.status.name() == 'SALE'}"
+                      th:action="@{/posts/{id}/requests(id=${post.id})}" method="post">
+                    <input type="hidden" name="_tradeCsrf" th:value="${tradeCsrf}">
+                    <button class="button button--primary" th:text="#{trade.apply}">거래 신청</button>
                 </form>
+                <a th:if="${loginMember == null}" class="button button--primary"
+                   th:href="@{/login(redirectURL=${'/posts/' + post.id})}" th:text="#{trade.login}">로그인 후 신청</a>
+                <p th:if="${post.status.name() != 'SALE'}" th:text="#{trade.unavailable}">신청할 수 없는 거래입니다.</p>
             </aside>
         </div>
 
@@ -79,12 +80,12 @@
 
     <div class="detail-actions">
         <a class="button button--primary"
-           th:if="${canManage}"
+           th:if="${canManage and post.status.name() == 'SALE'}"
            th:href="@{/posts/{postId}/edit(postId=${post.id})}"
            th:text="#{link.post.edit}">수정</a>
         <a class="button button--secondary" th:href="@{/posts}" href="/posts"
            th:text="#{link.post.list}">목록으로 돌아가기</a>
-        <form th:if="${canManage}"
+        <form th:if="${canManage and post.status.name() == 'SALE'}"
               th:action="@{/posts/{postId}/delete(postId=${post.id})}"
               method="post">
             <button class="button button--danger" type="submit"

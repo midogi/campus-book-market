@@ -20,7 +20,8 @@
     </div>
 
     <form class="form-panel form-stack"
-          th:action="@{/posts}" th:object="${postCreateForm}" method="post">
+          th:action="@{/posts}" th:object="${postCreateForm}" method="post"
+          enctype="multipart/form-data">
         <div class="field">
             <label for="title" th:text="#{label.post.title}">제목</label>
             <input id="title" type="text" th:field="*{title}" required
@@ -47,6 +48,18 @@
                       th:attr="aria-invalid=${#fields.hasErrors('description')}"></textarea>
             <p class="field-error" th:if="${#fields.hasErrors('description')}"
                th:errors="*{description}">상품 설명 오류</p>
+        </div>
+
+        <div class="field">
+            <label for="imageFile" th:text="#{label.post.image}">대표 이미지</label>
+            <input id="imageFile" type="file" th:field="*{imageFile}"
+                   accept="image/jpeg,image/png,image/webp"
+                   th:classappend="${#fields.hasErrors('imageFile')} ? 'is-invalid' : ''"
+                   th:attr="aria-describedby='image-help',aria-invalid=${#fields.hasErrors('imageFile')}">
+            <p id="image-help" class="field-help"
+               th:text="#{help.post.image}">JPG, PNG, WEBP · 최대 5MB</p>
+            <p class="field-error" th:if="${#fields.hasErrors('imageFile')}"
+               th:errors="*{imageFile}">이미지 오류</p>
         </div>
 
         <div class="form-actions">

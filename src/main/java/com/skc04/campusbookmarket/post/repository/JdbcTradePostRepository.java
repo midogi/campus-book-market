@@ -24,6 +24,12 @@ import org.springframework.stereotype.Repository;
 @Repository
 public class JdbcTradePostRepository implements TradePostRepository {
 
+    @Override
+    public Optional<TradePost> findByIdForUpdate(Long id) {
+        return jdbcTemplate.query("SELECT * FROM trade_post WHERE id = ? FOR UPDATE",
+                TRADE_POST_ROW_MAPPER, id).stream().findFirst();
+    }
+
     // JDBC 조회 결과 한 행의 컬럼을 TradePost 생성자 인수에 대응시킨다.
     private static final RowMapper<TradePost> TRADE_POST_ROW_MAPPER =
             (resultSet, rowNumber) -> new TradePost(
@@ -35,7 +41,9 @@ public class JdbcTradePostRepository implements TradePostRepository {
                     resultSet.getString("description"),
                     TradeStatus.valueOf(resultSet.getString("status")),
                     resultSet.getTimestamp("created_at").toLocalDateTime(),
-                    resultSet.getTimestamp("updated_at").toLocalDateTime()
+                    resultSet.getTimestamp("updated_at").toLocalDateTime(),
+                    resultSet.getString("image_original_name"),
+                    resultSet.getString("image_stored_name")
             );
 
     private final JdbcTemplate jdbcTemplate;
@@ -47,7 +55,8 @@ public class JdbcTradePostRepository implements TradePostRepository {
     @Override
     public List<TradePost> findAll() {
         String sql = """
-                SELECT id, member_id, title, price, seller_name, description, status, created_at, updated_at
+                SELECT id, member_id, title, price, seller_name, description, status,
+                       created_at, updated_at, image_original_name, image_stored_name
                 FROM trade_post
                 ORDER BY id
                 """;
@@ -127,7 +136,8 @@ public class JdbcTradePostRepository implements TradePostRepository {
             Integer offset
     ) {
         StringBuilder sql = new StringBuilder("""
-                SELECT id, member_id, title, price, seller_name, description, status, created_at, updated_at
+                SELECT id, member_id, title, price, seller_name, description, status,
+                       created_at, updated_at, image_original_name, image_stored_name
                 FROM trade_post
                 WHERE 1 = 1
                 """);
@@ -189,7 +199,8 @@ public class JdbcTradePostRepository implements TradePostRepository {
     @Override
     public Optional<TradePost> findById(Long id) {
         String sql = """
-                SELECT id, member_id, title, price, seller_name, description, status, created_at, updated_at
+                SELECT id, member_id, title, price, seller_name, description, status,
+                       created_at, updated_at, image_original_name, image_stored_name
                 FROM trade_post
                 WHERE id = ?
                 """;
@@ -293,6 +304,31 @@ public class JdbcTradePostRepository implements TradePostRepository {
             return Optional.empty();
         }
 
+        return findById(id);
+    }
+
+    @Override
+    public Optional<TradePost> updateImage(
+            Long id,
+            String imageOriginalName,
+            String imageStoredName
+    ) {
+        String sql = """
+                UPDATE trade_post
+                SET image_original_name = ?, image_stored_name = ?,
+                    updated_at = CURRENT_TIMESTAMP
+                WHERE id = ?
+                """;
+
+        int updatedRows = jdbcTemplate.update(
+                sql,
+                imageOriginalName,
+                imageStoredName,
+                id
+        );
+        if (updatedRows == 0) {
+            return Optional.empty();
+        }
         return findById(id);
     }
 

@@ -45,6 +45,9 @@ public interface TradePostRepository {
     /** 기본 키로 게시글을 조회하며, 없으면 빈 Optional을 반환한다. */
     Optional<TradePost> findById(Long id);
 
+    /** 거래 신청·예약·내용 변경이 경합하지 않도록 트랜잭션 종료까지 행 잠금을 유지한다. */
+    Optional<TradePost> findByIdForUpdate(Long id);
+
     /** 새 게시글을 저장하고 DB에서 생성된 ID가 반영된 엔티티를 반환한다. */
     TradePost save(String title, long price, Member seller, String description);
 
@@ -58,6 +61,13 @@ public interface TradePostRepository {
 
     /** 거래 상태를 변경하며, 대상이 없으면 빈 Optional을 반환한다. */
     Optional<TradePost> updateStatus(Long id, TradeStatus status);
+
+    /** 대표 이미지의 원본명·저장명을 함께 변경하며, null 두 개는 이미지 제거를 뜻한다. */
+    Optional<TradePost> updateImage(
+            Long id,
+            String imageOriginalName,
+            String imageStoredName
+    );
 
     /** 게시글을 삭제하고 실제 삭제 여부를 반환한다. */
     boolean deleteById(Long id);

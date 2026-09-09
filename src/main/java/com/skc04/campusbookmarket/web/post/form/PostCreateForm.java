@@ -1,0 +1,60 @@
+package com.skc04.campusbookmarket.web.post.form;
+
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.PositiveOrZero;
+import jakarta.validation.constraints.Size;
+import org.springframework.web.multipart.MultipartFile;
+
+/**
+ * 게시글 등록 폼의 HTTP 입력을 받는 객체다.
+ * 엔티티와 분리해 화면 검증 규칙이 도메인 모델에 섞이지 않게 한다.
+ */
+public class PostCreateForm {
+
+    @NotBlank(message = "{validation.post.title.required}")
+    @Size(max = 100, message = "{validation.post.title.size}")
+    private String title;
+
+    @NotNull(message = "{validation.post.price.required}")
+    @PositiveOrZero(message = "{validation.post.price.positiveOrZero}")
+    private Long price;
+
+    @NotBlank(message = "{validation.post.description.required}")
+    @Size(max = 1000, message = "{validation.post.description.size}")
+    private String description;
+
+    private MultipartFile imageFile;
+
+    public String getTitle() {
+        return title;
+    }
+
+    public void setTitle(String title) {
+        this.title = title;
+    }
+
+    public Long getPrice() {
+        return price;
+    }
+
+    public void setPrice(Long price) {
+        this.price = price;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public MultipartFile getImageFile() {
+        return imageFile;
+    }
+
+    public void setImageFile(MultipartFile imageFile) {
+        this.imageFile = imageFile;
+    }
+}

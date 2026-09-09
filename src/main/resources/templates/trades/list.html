@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{trade.history}">내 거래</title><link rel="stylesheet" th:href="@{/css/app.css}"></head>
+<body><a class="skip-link" href="#main-content" th:text="#{aria.skip.content}">본문으로</a>
+<header th:replace="~{fragments/site :: header}"></header>
+<main id="main-content" class="page-shell page-shell--wide">
+    <h1 th:text="${postId != null} ? #{trade.received} : #{trade.history}">내 거래</h1>
+    <a th:if="${postId != null}" th:href="@{/posts/{id}(id=${postId})}" th:text="#{link.post.list}">게시글</a>
+    <p th:if="${tradePage.empty}" th:text="#{trade.empty}">거래 내역이 없습니다.</p>
+    <div class="trade-list">
+        <article class="trade-row" th:each="trade : ${tradePage.content}">
+            <div class="trade-row__info">
+                <span class="status-badge" th:text="#{${'requestStatus.' + trade.status.name()}}">신청</span>
+                <h2><a th:href="@{/posts/{id}(id=${trade.postId})}" th:text="${trade.title}">제목</a></h2>
+                <strong th:text="#{format.price(${trade.price})}">가격</strong>
+                <p><span th:text="#{trade.buyer}">구매자</span>: <span th:text="${trade.buyerName}"></span>
+                    · <span th:text="#{label.post.sellerName}">판매자</span>: <span th:text="${trade.sellerName}"></span></p>
+                <time th:text="${#temporals.format(trade.createdAt, 'yyyy-MM-dd HH:mm')}"></time>
+            </div>
+            <div class="trade-row__actions">
+                <form th:if="${trade.canReserve}" th:action="@{/trades/{id}/reserve(id=${trade.id})}" method="post">
+                    <input type="hidden" name="_tradeCsrf" th:value="${tradeCsrf}">
+                    <button class="button button--primary" th:text="#{trade.reserve}">예약 확정</button></form>
+                <form th:if="${trade.canComplete}" th:action="@{/trades/{id}/complete(id=${trade.id})}" method="post">
+                    <input type="hidden" name="_tradeCsrf" th:value="${tradeCsrf}">
+                    <button class="button button--primary" th:text="#{trade.complete}">거래 완료</button></form>
+                <form th:if="${trade.canReject}" th:action="@{/trades/{id}/reject(id=${trade.id})}" method="post">
+                    <input type="hidden" name="_tradeCsrf" th:value="${tradeCsrf}">
+                    <button class="button button--secondary" th:text="#{trade.reject}">거절</button></form>
+                <form th:if="${trade.canCancel}" th:action="@{/trades/{id}/cancel(id=${trade.id})}" method="post">
+                    <input type="hidden" name="_tradeCsrf" th:value="${tradeCsrf}">
+                    <button class="button button--danger" th:text="#{trade.cancel}">취소</button></form>
+            </div>
+        </article>
+    </div>
+    <nav class="detail-actions" th:unless="${tradePage.empty}" aria-label="Pagination">
+        <a class="button button--secondary" th:if="${tradePage.hasPrevious()}"
+           th:href="${postId != null} ? @{/posts/{id}/requests(id=${postId},page=${tradePage.number})} : @{/trades(page=${tradePage.number})}" th:text="#{trade.previous}">이전</a>
+        <span th:text="${(tradePage.number + 1) + ' / ' + tradePage.totalPages}"></span>
+        <a class="button button--secondary" th:if="${tradePage.hasNext()}"
+           th:href="${postId != null} ? @{/posts/{id}/requests(id=${postId},page=${tradePage.number + 2})} : @{/trades(page=${tradePage.number + 2})}" th:text="#{trade.next}">다음</a>
+    </nav>
+</main><footer th:replace="~{fragments/site :: footer}"></footer></body></html>

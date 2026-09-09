@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Campus Book Market</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
+</head>
+<body class="page--home">
+<a class="skip-link" href="#main-content" th:text="#{aria.skip.content}">본문으로 건너뛰기</a>
+<header th:replace="~{fragments/site :: header}"></header>
+
+<main id="main-content">
+    <section class="home-hero">
+        <div class="shell">
+            <div class="home-hero__content">
+                <p class="eyebrow" th:text="#{home.eyebrow}">대학생 전공책·학습용품 마켓</p>
+                <h1>
+                    <span th:text="#{home.title.first}">필요한 책은 가까이,</span>
+                    <span th:text="#{home.title.second}">배움은 더 오래</span>
+                </h1>
+                <p class="home-hero__description" th:text="#{home.description}">
+                    대학생 전공책과 학습용품을 거래하는 공간입니다.
+                </p>
+                <div class="hero-actions">
+                    <a class="button button--light" th:href="@{/posts}" href="/posts"
+                       th:text="#{button.home.browse}">거래글 둘러보기</a>
+                    <a class="button button--primary"
+                       th:if="${loginMember != null}"
+                       th:href="@{/posts/new}" href="/posts/new"
+                       th:text="#{button.home.sell}">판매글 등록</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="home-categories" aria-labelledby="category-heading">
+        <div class="shell">
+            <div class="section-heading">
+                <h2 id="category-heading" th:text="#{home.categories.title}">
+                    캠퍼스에서 다시 만나는 학습 도구
+                </h2>
+            </div>
+            <div class="category-grid">
+                <div class="category-item" th:text="#{home.category.books}">전공책</div>
+                <div class="category-item" th:text="#{home.category.tools}">계산기·공학 도구</div>
+                <div class="category-item" th:text="#{home.category.supplies}">노트·학습용품</div>
+            </div>
+        </div>
+    </section>
+</main>
+
+<footer th:replace="~{fragments/site :: footer}"></footer>
+</body>
+</html>

@@ -35,3 +35,15 @@ out/
 
 ### VS Code ###
 .vscode/
+
+### Local H2 database ###
+/data/
+/data-backup*/
+
+### Local uploaded files ###
+/uploads/
+
+### Local secrets ###
+.env
+.env.*
+!.env.example

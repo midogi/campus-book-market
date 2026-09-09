@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{trade.conflict}">거래 상태를 확인해주세요</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}"></head>
+<body><header th:replace="~{fragments/site :: header}"></header>
+<main class="page-shell"><h1 th:text="#{trade.conflict}">거래 상태를 확인해주세요</h1>
+    <p th:text="#{${tradeErrorCode}}"></p>
+    <a class="button button--primary" th:href="@{/trades}" th:text="#{trade.history}">내 거래</a>
+    <a class="button button--secondary" th:href="@{/posts}" th:text="#{link.post.list}">목록</a>
+</main><footer th:replace="~{fragments/site :: footer}"></footer></body></html>

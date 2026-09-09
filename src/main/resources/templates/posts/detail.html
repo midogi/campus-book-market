@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{title.post.detail(${post.title})}">게시글 상세 - Campus Book Market</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
+</head>
+<body>
+<a class="skip-link" href="#main-content" th:text="#{aria.skip.content}">본문으로 건너뛰기</a>
+<header th:replace="~{fragments/site :: header}"></header>
+
+<main id="main-content" class="page-shell page-shell--wide">
+    <a class="back-link" th:href="@{/posts}" href="/posts"
+       th:text="#{link.post.list}">목록으로 돌아가기</a>
+
+    <article>
+        <header class="detail-header">
+            <div class="detail-header__topline">
+                <span class="status-badge"
+                      th:classappend="${'status-badge--' + #strings.toLowerCase(post.status.name())}"
+                      th:text="#{${'tradeStatus.' + post.status.name()}}">판매 중</span>
+                <span class="result-count">Campus Book Market</span>
+            </div>
+            <h1 th:text="${post.title}">게시글 제목</h1>
+            <p class="detail-price" th:text="#{format.price(${post.price})}">0원</p>
+        </header>
+
+        <div class="detail-layout">
+            <div class="detail-main">
+                <figure class="detail-image" th:if="${post.hasImage()}">
+                    <img th:src="@{/post-images/{storedName}(storedName=${post.imageStoredName})}"
+                         th:alt="${post.title}">
+                </figure>
+                <div class="detail-image detail-image--empty" th:unless="${post.hasImage()}">
+                    <span th:text="#{empty.post.image}">등록된 대표 이미지가 없습니다.</span>
+                </div>
+
+                <dl class="detail-meta">
+                    <div>
+                        <dt th:text="#{label.post.sellerName}">판매자</dt>
+                        <dd th:text="${post.sellerName}">판매자</dd>
+                    </div>
+                    <div>
+                        <dt th:text="#{label.post.status}">거래 상태</dt>
+                        <dd th:text="#{${'tradeStatus.' + post.status.name()}}">판매 중</dd>
+                    </div>
+                    <div>
+                        <dt th:text="#{label.post.createdAt}">등록 시각</dt>
+                        <dd th:text="${post.createdAt}">2026-08-11T10:00</dd>
+                    </div>
+                    <div>
+                        <dt th:text="#{label.post.updatedAt}">수정 시각</dt>
+                        <dd th:text="${post.updatedAt}">2026-08-11T10:00</dd>
+                    </div>
+                </dl>
+
+                <section class="detail-description">
+                    <h2 th:text="#{section.post.description}">상품 설명</h2>
+                    <p th:text="${post.description}">상품 설명</p>
+                </section>
+            </div>
+
+            <aside class="detail-aside">
+                <h2 th:text="#{trade.section}">거래하기</h2>
+                <a th:if="${canManage}" class="button button--primary"
+                   th:href="@{/posts/{id}/requests(id=${post.id})}" th:text="#{trade.received}">신청 목록</a>
+                <form th:if="${loginMember != null and !canManage and post.sellerId != null and post.status.name() == 'SALE'}"
+                      th:action="@{/posts/{id}/requests(id=${post.id})}" method="post">
+                    <input type="hidden" name="_tradeCsrf" th:value="${tradeCsrf}">
+                    <button class="button button--primary" th:text="#{trade.apply}">거래 신청</button>
+                </form>
+                <a th:if="${loginMember == null}" class="button button--primary"
+                   th:href="@{/login(redirectURL=${'/posts/' + post.id})}" th:text="#{trade.login}">로그인 후 신청</a>
+                <p th:if="${post.status.name() != 'SALE'}" th:text="#{trade.unavailable}">신청할 수 없는 거래입니다.</p>
+            </aside>
+        </div>
+
+    </article>
+
+    <div class="detail-actions">
+        <a class="button button--primary"
+           th:if="${canManage and post.status.name() == 'SALE'}"
+           th:href="@{/posts/{postId}/edit(postId=${post.id})}"
+           th:text="#{link.post.edit}">수정</a>
+        <a class="button button--secondary" th:href="@{/posts}" href="/posts"
+           th:text="#{link.post.list}">목록으로 돌아가기</a>
+        <form th:if="${canManage and post.status.name() == 'SALE'}"
+              th:action="@{/posts/{postId}/delete(postId=${post.id})}"
+              method="post">
+            <button class="button button--danger" type="submit"
+                    th:text="#{button.post.delete}">삭제</button>
+        </form>
+    </div>
+</main>
+
+<footer th:replace="~{fragments/site :: footer}"></footer>
+</body>
+</html>

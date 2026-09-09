@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ko"
+      th:lang="${#locale.language}"
+      xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title th:text="#{title.login}">
+        로그인 - Campus Book Market
+    </title>
+
+    <link rel="stylesheet"
+          th:href="@{/css/app.css}"
+          href="/css/app.css">
+</head>
+
+<body>
+<a class="skip-link"
+   href="#main-content"
+   th:text="#{aria.skip.content}">
+    본문으로 건너뛰기
+</a>
+
+<header th:replace="~{fragments/site :: header}"></header>
+
+<main id="main-content"
+      class="page-shell page-shell--wide auth-page">
+
+    <section class="auth-intro">
+        <div class="auth-intro__mark"
+             aria-hidden="true">
+            CB
+        </div>
+
+        <p class="eyebrow">
+            Campus Book Market
+        </p>
+
+        <h1 th:text="#{page.login}">
+            로그인
+        </h1>
+
+        <p th:text="#{home.description}">
+            대학생 전공책과 학습용품을 거래하는 공간입니다.
+        </p>
+    </section>
+
+    <form class="form-panel form-stack"
+          th:action="@{/login}"
+          th:object="${loginForm}"
+          method="post">
+
+        <input type="hidden"
+               name="redirectURL"
+               th:value="${redirectURL}">
+
+        <div th:if="${#fields.hasGlobalErrors()}">
+            <p class="field-error"
+               th:each="error : ${#fields.globalErrors()}"
+               th:text="${error}">
+                로그인 실패
+            </p>
+        </div>
+
+        <div class="field">
+            <label for="loginId"
+                   th:text="#{label.member.loginId}">
+                로그인 아이디
+            </label>
+
+            <input id="loginId"
+                   type="text"
+                   autocomplete="username"
+                   th:field="*{loginId}"
+                   th:errorclass="is-invalid">
+
+            <p class="field-error"
+               th:if="${#fields.hasErrors('loginId')}"
+               th:errors="*{loginId}">
+                로그인 아이디 오류
+            </p>
+        </div>
+
+        <div class="field">
+            <label for="password"
+                   th:text="#{label.member.password}">
+                비밀번호
+            </label>
+
+            <input id="password"
+                   type="password"
+                   autocomplete="current-password"
+                   th:field="*{password}"
+                   th:errorclass="is-invalid">
+
+            <p class="field-error"
+               th:if="${#fields.hasErrors('password')}"
+               th:errors="*{password}">
+                비밀번호 오류
+            </p>
+        </div>
+
+        <div class="form-actions">
+            <a class="button button--secondary"
+               th:href="@{/members/new}"
+               th:text="#{link.login.join}">
+                회원가입
+            </a>
+
+            <button class="button button--primary"
+                    type="submit"
+                    th:text="#{button.login}">
+                로그인
+            </button>
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{fragments/site :: footer}"></footer>
+</body>
+</html>

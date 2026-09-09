@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="ko" th:lang="${#locale.language}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="#{title.post.create}">게시글 등록 - Campus Book Market</title>
+    <link rel="stylesheet" th:href="@{/css/app.css}" href="/css/app.css">
+</head>
+<body>
+<a class="skip-link" href="#main-content" th:text="#{aria.skip.content}">본문으로 건너뛰기</a>
+<header th:replace="~{fragments/site :: header}"></header>
+
+<main id="main-content" class="page-shell">
+    <div class="page-heading">
+        <div class="page-heading__copy">
+            <a class="back-link" th:href="@{/posts}" href="/posts"
+               th:text="#{link.post.list}">목록으로 돌아가기</a>
+            <h1 th:text="#{page.post.create}">게시글 등록</h1>
+        </div>
+    </div>
+
+    <form class="form-panel form-stack"
+          th:action="@{/posts}" th:object="${postCreateForm}" method="post"
+          enctype="multipart/form-data">
+        <div class="field">
+            <label for="title" th:text="#{label.post.title}">제목</label>
+            <input id="title" type="text" th:field="*{title}" required
+                   th:classappend="${#fields.hasErrors('title')} ? 'is-invalid' : ''"
+                   th:attr="aria-invalid=${#fields.hasErrors('title')}">
+            <p class="field-error" th:if="${#fields.hasErrors('title')}"
+               th:errors="*{title}">제목 오류</p>
+        </div>
+
+        <div class="field">
+            <label for="price" th:text="#{label.post.price}">가격</label>
+            <input id="price" type="number" min="0" th:field="*{price}" required
+                   th:classappend="${#fields.hasErrors('price')} ? 'is-invalid' : ''"
+                   th:attr="aria-invalid=${#fields.hasErrors('price')}">
+            <p class="field-error" th:if="${#fields.hasErrors('price')}"
+               th:errors="*{price}">가격 오류</p>
+        </div>
+
+        <div class="field">
+            <label for="description" th:text="#{label.post.description}">상품 설명</label>
+            <textarea id="description" rows="8" maxlength="1000"
+                      th:field="*{description}" required
+                      th:classappend="${#fields.hasErrors('description')} ? 'is-invalid' : ''"
+                      th:attr="aria-invalid=${#fields.hasErrors('description')}"></textarea>
+            <p class="field-error" th:if="${#fields.hasErrors('description')}"
+               th:errors="*{description}">상품 설명 오류</p>
+        </div>
+
+        <div class="field">
+            <label for="imageFile" th:text="#{label.post.image}">대표 이미지</label>
+            <input id="imageFile" type="file" th:field="*{imageFile}"
+                   accept="image/jpeg,image/png,image/webp"
+                   th:classappend="${#fields.hasErrors('imageFile')} ? 'is-invalid' : ''"
+                   th:attr="aria-describedby='image-help',aria-invalid=${#fields.hasErrors('imageFile')}">
+            <p id="image-help" class="field-help"
+               th:text="#{help.post.image}">JPG, PNG, WEBP · 최대 5MB</p>
+            <p class="field-error" th:if="${#fields.hasErrors('imageFile')}"
+               th:errors="*{imageFile}">이미지 오류</p>
+        </div>
+
+        <div class="form-actions">
+            <a class="button button--secondary" th:href="@{/posts}" href="/posts"
+               th:text="#{link.post.list}">목록으로 돌아가기</a>
+            <button class="button button--primary" type="submit"
+                    th:text="#{button.post.create}">등록</button>
+        </div>
+    </form>
+</main>
+
+<footer th:replace="~{fragments/site :: footer}"></footer>
+</body>
+</html>
